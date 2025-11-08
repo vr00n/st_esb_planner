@@ -3,13 +3,14 @@
 # Features:
 # - Renders map using streamlit.components.v1.html and mapbox-gl-js
 # - Toggleable layers: depots (points), routes (lines), NTAs (polygons), flood risk (polygons)
+# - **Flood Risk layer now uses graduated colors based on the 'FVI' property**
 # - Borough filters across all layers
-# - **Mock depots generated within NTA boundaries with electrical capacity data**
-# - **New filter for "Electrification Speed"**
-# - **Depots colored by speed and sized by existing capacity**
-# - **Hover tooltips on depots AND NTA polygons**
-# - **45-minute routes, 3 routes generated per selected borough**
-# - **Routes layer OFF by default, Flood layer ON by default**
+# - Mock depots generated within NTA boundaries with electrical capacity data
+# - New filter for "Electrification Speed"
+# - Depots colored by speed and sized by existing capacity
+# - Hover tooltips on depots AND NTA polygons
+# - 45-minute routes, 3 routes generated per selected borough
+# - Routes layer OFF by default, Flood layer ON by default
 
 import json
 import math
@@ -71,7 +72,7 @@ N_ROUTES_PER_BORO: int = 3 # <-- UPDATED logic
 COLORS: Dict[str, str] = {
     "polygons": "#8c564b", # Brown/gray for NTA lines
     "lines": "#1f77b4",      # Blue for routes
-    "flood_risk": "#9467bd", # Purple for flood zones
+    # "flood_risk" is no longer a single color
     # Depot colors
     "depot_fast": "#2ca02c",  # Green
     "depot_medium": "#ff7f0e", # Orange
@@ -295,7 +296,7 @@ def get_mapbox_html(
     points_json: str,
     lines_json: str,
     polygons_json: str,
-    fvi_json: str, # <-- ADDED
+    fvi_json: str,
     colors: Dict[str, str]
 ) -> str:
     """Generates the HTML for the Mapbox GL JS map."""
@@ -332,14 +333,24 @@ def get_mapbox_html(
         }});
         """
 
-    # --- FVI Polygon Layer (FIXED) ---
+    # --- FVI Polygon Layer (UPDATED with graduated colors) ---
     fvi_layers_js = ""
     if fvi_json != 'null':
         fvi_layers_js = f"""
         map.addSource('fvi-polygons', {{ 'type': 'geojson', 'data': {fvi_json} }});
         map.addLayer({{
             'id': 'fvi-fill', 'type': 'fill', 'source': 'fvi-polygons',
-            'paint': {{ 'fill-color': '{colors["flood_risk"]}', 'fill-opacity': 0.4 }}
+            'paint': {{
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['get', 'FVI'], // <-- ASSUMED property name
+                    0,  '#ffffcc', // Light Yellow (Low Risk)
+                    5,  '#ff9900', // Orange (Medium Risk)
+                    10, '#d62728'  // Red (High Risk)
+                ],
+                'fill-opacity': 0.7
+            }}
         }}); 
         """
         
@@ -458,7 +469,7 @@ def get_mapbox_html(
 # UI — SIDEBAR CONTROLS
 # =============================
 st.set_page_config(page_title="NYC LAEP+ Mock", layout="wide")
-st.title("NYC School Bus Electrification Planner") # <-- UPDATED TITLE
+st.title("NYC School Bus Electrification Planner") 
 
 with st.sidebar:
     st.header("Map Layers")
