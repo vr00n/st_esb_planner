@@ -9,6 +9,7 @@
 # - **Depots colored by speed and sized by existing capacity**
 # - **Hover tooltips on depots AND NTA polygons**
 # - **45-minute routes, 3 routes generated per selected borough**
+# - **Routes layer OFF by default, Flood layer ON by default**
 
 import json
 import math
@@ -261,7 +262,26 @@ NTA_FALLBACK = {
             "properties": {"ntacode": "MN17", "NTAName": "Midtown-Midtown South", "BoroName": "Manhattan"},
             "geometry": {"type": "Polygon", "coordinates": [[[-73.9985, 40.7636], [-73.9850, 40.7648], [-73.9733, 40.7563], [-73.9786, 40.7480], [-73.9918, 40.7471], [-73.9985, 40.7636]]]}
         },
-        # ... (other fallback features remain) ...
+        {
+            "type": "Feature",
+            "properties": {"ntacode": "BK09", "NTAName": "Williamsburg", "BoroName": "Brooklyn"},
+            "geometry": {"type": "Polygon", "coordinates": [[[-73.9719, 40.7269], [-73.9490, 40.7269], [-73.9420, 40.7095], [-73.9645, 40.7095], [-73.9719, 40.7269]]]}
+        },
+        {
+            "type": "Feature",
+            "properties": {"ntacode": "QN01", "NTAName": "Astoria", "BoroName": "Queens"},
+            "geometry": {"type": "Polygon", "coordinates": [[[-73.9437, 40.7893], [-73.9099, 40.7893], [-73.9099, 40.7687], [-73.9360, 40.7640], [-73.9437, 40.7893]]]}
+        },
+        {
+            "type": "Feature",
+            "properties": {"ntacode": "BX06", "NTAName": "Belmont", "BoroName": "Bronx"},
+            "geometry": {"type": "Polygon", "coordinates": [[[-73.8922, 40.8620], [-73.8785, 40.8620], [-73.8785, 40.8503], [-73.8922, 40.8503], [-73.8922, 40.8620]]]}
+        },
+        {
+            "type": "Feature",
+            "properties": {"ntacode": "SI07", "NTAName": "New Springville", "BoroName": "Staten Island"},
+            "geometry": {"type": "Polygon", "coordinates": [[[-74.1681, 40.5887], [-74.1378, 40.5887], [-74.1378, 40.5718], [-74.1681, 40.5718], [-74.1681, 40.5887]]]}
+        }
     ]
 }
 
@@ -312,7 +332,7 @@ def get_mapbox_html(
         }});
         """
 
-    # --- FVI Polygon Layer ---
+    # --- FVI Polygon Layer (FIXED) ---
     fvi_layers_js = ""
     if fvi_json != 'null':
         fvi_layers_js = f"""
@@ -320,7 +340,7 @@ def get_mapbox_html(
         map.addLayer({{
             'id': 'fvi-fill', 'type': 'fill', 'source': 'fvi-polygons',
             'paint': {{ 'fill-color': '{colors["flood_risk"]}', 'fill-opacity': 0.4 }}
-        }}, 'nta-fill'); // Insert before NTA fill for better visibility
+        }}); 
         """
         
     # --- Route Line Layer ---
@@ -443,9 +463,9 @@ st.title("NYC School Bus Electrification Planner") # <-- UPDATED TITLE
 with st.sidebar:
     st.header("Map Layers")
     show_points = st.checkbox("Bus Depots (Points)", value=True)
-    show_lines = st.checkbox("45-min Routes (Lines)", value=True)
+    show_lines = st.checkbox("45-min Routes (Lines)", value=False) # <-- UPDATED default
     show_polygons = st.checkbox("NTA Boundaries (Polygons)", value=True)
-    show_flood_zones = st.checkbox("Flood Risk Zones (FVI)", value=False) # <-- ADDED
+    show_flood_zones = st.checkbox("Flood Risk Zones (FVI)", value=True) # <-- UPDATED default
 
     st.header("Data Filters")
     selected_boros = st.multiselect("Filter by Borough", options=BOROUGHS, default=BOROUGHS)
@@ -619,4 +639,28 @@ if routes:
 
 # =============================
 # SMOKE TESTS
-# =... existing code ...
+# =============================
+with st.expander("Run smoke tests"):
+    tests = []
+    tests.append({"test": "Points present", "pass": len(points_df) > 0})
+    tests.append({"test": "NTA features present", "pass": len(nta_filtered.get('features', [])) > 0})
+    tests.append({"test": "NTA using fallback", "pass": nta_status != "fallback"})
+    tests.append({"test": "FVI features present", "pass": len(fvi_filtered.get('features', [])) > 0})
+    tests.append({"test": "FVI using fallback", "pass": not "fallback" in fvi_status})
+    
+    if show_lines and routes:
+        tests.append({"test": "Routes found", "pass": len(routes) > 0})
+        
+    st.table(pd.DataFrame(tests))
+
+# =============================
+# NOTES
+# =============================
+st.markdown("""
+- This app now uses `streamlit.components.v1.html` and `mapbox-gl-js` to render the map.
+- `folium` and `streamlit-folium` are no longer used.
+- All four layers (depots, routes, NTAs, flood zones) are supported.
+- App is set to find 3 45-minute routes per selected borough.
+- OSRM_BASE can be overridden in `st.secrets` for a private OSRM server.
+- Public OSRM is rate-limited; for reliability, run your own OSRM backend.
+""")
