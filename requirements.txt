@@ -1,4 +1,5 @@
-streamlit>=1.34,<2
-pydeck>=0.9,<1
-pandas>=2,<3
-requests>=2.31,<3
+pandas
+requests
+streamlit
+folium
+streamlit-folium
