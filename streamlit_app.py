@@ -7,9 +7,11 @@
 # - NTAs fetched from NYC Open Data with robust fallback
 # - Debugging logs, structured outputs, and smoke tests
 # - Exact parameter names and data types documented in function signatures
+# - All sensitive keys pulled from st.secrets or environment
 
 import json
 import math
+import os
 import random
 import time
 from dataclasses import dataclass
@@ -21,16 +23,25 @@ import requests
 import streamlit as st
 
 # =============================
-# CONFIG
+# CONFIG (keys via st.secrets / env)
 # =============================
-MAPBOX_TOKEN: str = "pk.eyJ1IjoidnIwMG4tbnljc2J1cyIsImEiOiJjbDB5cHhoeHgxcmEyM2ptdXVkczk1M2xlIn0.qq6o-6TMurwke-t1eyetBw"  # provided by user
+# Set in .streamlit/secrets.toml:
+# MAPBOX_TOKEN = "pk..."
+# OSRM_BASE = "https://your-osrm-host/route/v1/driving"  # optional, defaults to public demo
+
+MAPBOX_TOKEN: Optional[str] = st.secrets.get("MAPBOX_TOKEN") or os.getenv("MAPBOX_TOKEN")
+if not MAPBOX_TOKEN:
+    st.error("Missing MAPBOX_TOKEN. Add it to st.secrets or environment.")
+    st.stop()
+
 pdk.settings.mapbox_api_key = MAPBOX_TOKEN
+
+OSRM_BASE: str = st.secrets.get("OSRM_BASE", "https://router.project-osrm.org/route/v1/driving")
 
 NYC_BBOX: Tuple[float, float, float, float] = (-74.25559, 40.49612, -73.70001, 40.91553)
 DEFAULT_CENTER: Tuple[float, float] = (-73.95, 40.72)
 
 NTA2020_GEOJSON_URL: str = "https://data.cityofnewyork.us/resource/qb5r-6dgf.geojson?$limit=5000"
-OSRM_BASE: str = "https://router.project-osrm.org/route/v1/driving"  # demo server; rate‑limited
 TARGET_ROUTE_SECONDS: int = 90 * 60  # 90 minutes
 
 COLORS: Dict[str, str] = {
@@ -79,7 +90,7 @@ def grid_points(cols: int = 18, rows: int = 12, bbox: Tuple[float, float, float,
 
 
 def osrm_route(origin: Tuple[float, float], destination: Tuple[float, float], timeout_s: int = 12) -> Optional[RouteResult]:
-    """Call OSRM demo server for a route.
+    """Call OSRM server for a route.
     Parameters:
       origin: (lon, lat)
       destination: (lon, lat)
@@ -100,7 +111,6 @@ def osrm_route(origin: Tuple[float, float], destination: Tuple[float, float], ti
             return None
         route = data["routes"][0]
         coords = route["geometry"]["coordinates"]  # [[lon, lat], ...]
-        # convert to tuples for deck.gl
         coords_t = [(float(x), float(y)) for x, y in coords]
         return RouteResult(
             coordinates=coords_t,
@@ -121,11 +131,10 @@ def find_route_near_duration(origin: Tuple[float, float], target_s: int = TARGET
     minx, miny, maxx, maxy = NYC_BBOX
     best: Optional[RouteResult] = None
 
-    # Start with a moderate radius ~20 km, expand if too short
     base_radius_deg = 0.18  # ~20km at NYC lat
     for attempt in range(1, attempts + 1):
         angle = rand_between(0, 2 * math.pi)
-        radius = base_radius_deg * attempt  # expand
+        radius = base_radius_deg * attempt
         dest = (
             max(min(origin[0] + math.cos(angle) * radius, maxx), minx),
             max(min(origin[1] + math.sin(angle) * radius, maxy), miny),
@@ -136,10 +145,8 @@ def find_route_near_duration(origin: Tuple[float, float], target_s: int = TARGET
         res.attempts = attempt
         if best is None or abs(res.duration_s - target_s) < abs(best.duration_s - target_s):
             best = res
-        # stop early if within 10% of target
         if abs(res.duration_s - target_s) <= target_s * 0.1:
             break
-        # Adaptive tweak: if way short, increase radius faster
         if res.duration_s < target_s * 0.5:
             base_radius_deg *= 1.4
     return best
@@ -147,7 +154,7 @@ def find_route_near_duration(origin: Tuple[float, float], target_s: int = TARGET
 
 @st.cache_data(show_spinner=False)
 def load_nta_geojson() -> Tuple[dict, str]:
-    """Fetch 2020 NTA GeoJSON. Returns (geojson, status). Status in {loaded, fallback, error}."""
+    """Fetch 2020 NTA GeoJSON. Returns (geojson, status). Status in {loaded, fallback}."""
     try:
         st.debug(f"NTA.fetch {NTA2020_GEOJSON_URL}")
         r = requests.get(NTA2020_GEOJSON_URL, timeout=20)
@@ -218,7 +225,7 @@ random.seed(seed)
 # =============================
 # Points
 grid = grid_points()
-points_df = pd.DataFrame(grid, columns=["lon", "lat", "borough"])  # structured
+points_df = pd.DataFrame(grid, columns=["lon", "lat", "borough"])
 points_df["name"] = [f"Mock Site {i+1}" for i in range(len(points_df))]
 
 # Polygons (NTAs)
@@ -245,7 +252,7 @@ if show_lines and len(selected_boros) > 0:
         res = find_route_near_duration(o, target_s=TARGET_ROUTE_SECONDS, attempts=7)
         if res:
             routes.append(res)
-        time.sleep(0.2)  # be gentle with demo server
+        time.sleep(0.2)  # be gentle on OSRM
 
 # =============================
 # DEBUG OUTPUTS
@@ -255,10 +262,10 @@ status_table = pd.DataFrame([
     {"key": "nta_status", "value": nta_status},
     {"key": "points_count", "value": len(points_df)},
     {"key": "routes_count", "value": len(routes)},
+    {"key": "osrm_base", "value": OSRM_BASE},
 ])
 st.table(status_table)
 
-# Route diagnostics table
 if routes:
     diag = pd.DataFrame([
         {
@@ -284,7 +291,7 @@ if show_polygons and len(nta_filtered.get("features", [])):
             nta_filtered,
             stroked=True,
             filled=True,
-            get_fill_color=[44, 160, 44, 50],  # COLORS.polygons with alpha
+            get_fill_color=[44, 160, 44, 50],
             get_line_color=[44, 160, 44, 180],
             get_line_width=1,
             pickable=True,
@@ -301,13 +308,12 @@ if show_points:
             get_position="[lon, lat]",
             get_radius=35,
             radius_units="pixels",
-            get_fill_color=[31, 119, 180, 220],  # COLORS.points
+            get_fill_color=[31, 119, 180, 220],
             pickable=True,
         )
     )
 
 if show_lines and routes:
-    # Convert routes to PathLayer input
     paths = [{"path": r.coordinates, "name": f"~{round(r.duration_s/60)} min"} for r in routes]
     layers.append(
         pdk.Layer(
@@ -316,7 +322,7 @@ if show_lines and routes:
             get_path="path",
             get_width=4,
             width_units="pixels",
-            get_color=[255, 127, 14, 230],  # COLORS.lines
+            get_color=[255, 127, 14, 230],
             pickable=True,
         )
     )
@@ -340,7 +346,6 @@ with st.expander("Run smoke tests"):
     tests.append({"test": "Has Mapbox token", "pass": bool(MAPBOX_TOKEN)})
     tests.append({"test": "Points present", "pass": len(points_df) > 0})
     tests.append({"test": "NTA features present", "pass": len(nta_filtered.get('features', [])) > 0})
-    # If routes requested, check durations near target within tolerance
     if show_lines and routes:
         tol = tolerance_min * 60
         near = all(abs(r.duration_s - TARGET_ROUTE_SECONDS) <= tol for r in routes)
@@ -350,6 +355,7 @@ with st.expander("Run smoke tests"):
 # =============================
 # NOTES
 # =============================
-# - OSRM demo is rate-limited and sometimes returns suboptimal durations; adjust attempts or add your own OSRM instance for reliability.
-# - For true time-based isochrones (areas reachable in 90m), consider Valhalla or OpenRouteService. Here we approximate 90m routes via destination search.
-# - To deploy: `streamlit run streamlit_app.py`.
+# - Provide MAPBOX_TOKEN in st.secrets or env; PathLayer uses Mapbox via pydeck.
+# - OSRM_BASE can be overridden in st.secrets for a private OSRM server.
+# - Public OSRM is rate‑limited; for reliability, run your own OSRM backend.
+# - For true isochrones (90‑min areas), consider Valhalla/OpenRouteService.
