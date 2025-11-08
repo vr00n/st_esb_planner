@@ -56,8 +56,8 @@ OSRM_BASE: str = st.secrets.get("OSRM_BASE", "https://router.project-osrm.org/ro
 NYC_BBOX: Tuple[float, float, float, float] = (-74.25559, 40.49612, -73.70001, 40.91553)
 DEFAULT_CENTER: Tuple[float, float] = (-73.95, 40.72) # (lon, lat)
 
-# Switched to the new ArcGIS pgeojson URL
-NTA2020_GEOJSON_URL: str = "https://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/NYC_Neighborhood_Tabulation_Areas_2020/FeatureServer/0/query?where=1=1&outFields=*&outSR=4326&f=pgeojson"
+# Use the local GeoJSON file
+NTA2020_GEOJSON_PATH: str = "NYC_Neighborhood_Tabulation_Areas_2020_-2131974656277759428.geojson"
 TARGET_ROUTE_SECONDS: int = 90 * 60  # 90 minutes
 N_ROUTES_TO_FIND: int = 5 # Hardcoded number of routes
 
@@ -171,13 +171,15 @@ def find_route_near_duration(origin: Tuple[float, float], target_s: int = TARGET
 
 @st.cache_data(show_spinner=False)
 def load_nta_geojson() -> Tuple[dict, str]:
-    """Fetch 2020 NTA GeoJSON. Returns (geojson, status). Status in {loaded, fallback}."""
+    """Load 2020 NTA GeoJSON from local file. Returns (geojson, status). Status in {loaded, fallback}."""
     try:
-        ui_debug(f"NTA.fetch {NTA2020_GEOJSON_URL}")
-        r = requests.get(NTA2020_GEOJSON_URL, timeout=20)
-        if r.status_code == 200:
-            return r.json(), "loaded"
-        ui_debug(f"NTA.fetch.failed status={r.status_code}")
+        ui_debug(f"NTA.load {NTA2020_GEOJSON_PATH}")
+        # Open the local file instead of fetching a URL
+        with open(NTA2020_GEOJSON_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data, "loaded"
+    except FileNotFoundError:
+        ui_debug(f"NTA.file_not_found {NTA2020_GEOJSON_PATH}")
         return NTA_FALLBACK, "fallback"
     except Exception as e:
         ui_debug(f"NTA.exception {e}")
@@ -185,36 +187,38 @@ def load_nta_geojson() -> Tuple[dict, str]:
 
 
 # Minimal fallback — one polygon per borough (keeps app working offline/CORS‑blocked)
+# --- UPDATED: Fields (NTAName, BoroName) now match the ArcGIS source schema ---
 NTA_FALLBACK = {
     "type": "FeatureCollection",
     "features": [
         {
             "type": "Feature",
-            "properties": {"ntacode": "MN17", "ntaname": "Midtown-Midtown South", "boro_name": "Manhattan"},
+            "properties": {"ntacode": "MN17", "NTAName": "Midtown-Midtown South", "BoroName": "Manhattan"},
             "geometry": {"type": "Polygon", "coordinates": [[[-73.9985, 40.7636], [-73.9850, 40.7648], [-73.9733, 40.7563], [-73.9786, 40.7480], [-73.9918, 40.7471], [-73.9985, 40.7636]]]}
         },
         {
             "type": "Feature",
-            "properties": {"ntacode": "BK09", "ntaname": "Williamsburg", "boro_name": "Brooklyn"},
+            "properties": {"ntacode": "BK09", "NTAName": "Williamsburg", "BoroName": "Brooklyn"},
             "geometry": {"type": "Polygon", "coordinates": [[[-73.9719, 40.7269], [-73.9490, 40.7269], [-73.9420, 40.7095], [-73.9645, 40.7095], [-73.9719, 40.7269]]]}
         },
         {
             "type": "Feature",
-            "properties": {"ntacode": "QN01", "ntaname": "Astoria", "boro_name": "Queens"},
+            "properties": {"ntacode": "QN01", "NTAName": "Astoria", "BoroName": "Queens"},
             "geometry": {"type": "Polygon", "coordinates": [[[-73.9437, 40.7893], [-73.9099, 40.7893], [-73.9099, 40.7687], [-73.9360, 40.7640], [-73.9437, 40.7893]]]}
         },
         {
             "type": "Feature",
-            "properties": {"ntacode": "BX06", "ntaname": "Belmont", "boro_name": "Bronx"},
+            "properties": {"ntacode": "BX06", "NTAName": "Belmont", "BoroName": "Bronx"},
             "geometry": {"type": "Polygon", "coordinates": [[[-73.8922, 40.8620], [-73.8785, 40.8620], [-73.8785, 40.8503], [-73.8922, 40.8503], [-73.8922, 40.8620]]]}
         },
         {
             "type": "Feature",
-            "properties": {"ntacode": "SI07", "ntaname": "New Springville", "boro_name": "Staten Island"},
+            "properties": {"ntacode": "SI07", "NTAName": "New Springville", "BoroName": "Staten Island"},
             "geometry": {"type": "Polygon", "coordinates": [[[-74.1681, 40.5887], [-74.1378, 40.5887], [-74.1378, 40.5718], [-74.1681, 40.5718], [-74.1681, 40.5887]]]}
         }
     ]
 }
+# --- END UPDATE ---
 
 # =============================
 # UI — SIDEBAR CONTROLS
