@@ -1,6 +1,7 @@
 # streamlit_app.py
-# NYC LAEP+ mock in Streamlit using Folium/Leaflet + OSRM routes.
+# NYC LAEP+ mock in Streamlit using Mapbox GL JS + OSRM routes.
 # Features:
+# - Renders map using streamlit.components.v1.html and mapbox-gl-js
 # - Toggleable layers: points, transportation polylines (90‑minute OSRM routes), polygons (2020 NTAs)
 # - Borough filters across all layers
 # - Dummy points grid covering NYC
@@ -20,13 +21,17 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 import requests
 import streamlit as st
-import folium
-from streamlit_folium import st_folium
+import streamlit.components.v1 as components  # <-- ADDED THIS
+
+# --- REMOVED FOLIUM ---
+# import folium
+# from streamlit_folium import st_folium
 
 # =============================
 # CONFIG (keys via st.secrets / env)
 # =============================
 # Set in .streamlit/secrets.toml:
+# MAPBOX_TOKEN = "pk..."
 # OSRM_BASE = "https://your-osrm-host/route/v1/driving"  # optional, defaults to public demo
 # DEBUG = true  # optional: echoes debug to sidebar
 
@@ -47,9 +52,12 @@ def ui_debug(message: str) -> None:
         # Never crash the app from debug output
         pass
 
+# --- RE-ADDED HARD TOKEN CHECK: This method requires Mapbox ---
 MAPBOX_TOKEN: Optional[str] = st.secrets.get("MAPBOX_TOKEN") or os.getenv("MAPBOX_TOKEN")
 if not MAPBOX_TOKEN:
-    ui_debug("MAPBOX_TOKEN missing from secrets. Using default OSM basemap.")
+    ui_debug("MAPBOX_TOKEN missing from secrets and env")
+    st.error("Missing MAPBOX_TOKEN. Add it to st.secrets or environment. This app requires it.")
+    st.stop()
 
 OSRM_BASE: str = st.secrets.get("OSRM_BASE", "https://router.project-osrm.org/route/v1/driving")
 
@@ -74,23 +82,21 @@ BOROUGHS: List[str] = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Islan
 
 @dataclass
 class RouteResult:
-    coordinates: List[Tuple[float, float]]
+    coordinates: List[Tuple[float, float]] # Note: [lon, lat] from OSRM
     duration_s: float
     distance_m: float
     status: str
     attempts: int
 
+# ... (rand_between, grid_points, osrm_route, find_route_near_duration, load_nta_geojson, NTA_FALLBACK all remain the same) ...
+# ... (copying them here for completeness) ...
 
 def rand_between(a: float, b: float) -> float:
     return random.random() * (b - a) + a
 
 
 def grid_points(cols: int = 18, rows: int = 12, bbox: Tuple[float, float, float, float] = NYC_BBOX) -> List[Tuple[float, float, str]]:
-    """Return a list of (lon, lat, borough) covering NYC.
-    - cols: int
-    - rows: int
-    - bbox: (minx, miny, maxx, maxy)
-    """
+    """Return a list of (lon, lat, borough) covering NYC."""
     minx, miny, maxx, maxy = bbox
     dx = (maxx - minx) / (cols - 1)
     dy = (maxy - miny) / (rows - 1)
@@ -107,13 +113,7 @@ def grid_points(cols: int = 18, rows: int = 12, bbox: Tuple[float, float, float,
 
 
 def osrm_route(origin: Tuple[float, float], destination: Tuple[float, float], timeout_s: int = 12) -> Optional[RouteResult]:
-    """Call OSRM server for a route.
-    Parameters:
-      origin: (lon, lat)
-      destination: (lon, lat)
-      timeout_s: int
-    Returns: RouteResult or None on error
-    """
+    """Call OSRM server for a route."""
     o_lon, o_lat = origin
     d_lon, d_lat = destination
     url = f"{OSRM_BASE}/{o_lon},{o_lat};{d_lon},{d_lat}?overview=full&annotations=false&geometries=geojson"
@@ -142,9 +142,7 @@ def osrm_route(origin: Tuple[float, float], destination: Tuple[float, float], ti
 
 
 def find_route_near_duration(origin: Tuple[float, float], target_s: int = TARGET_ROUTE_SECONDS, attempts: int = 7) -> Optional[RouteResult]:
-    """Heuristic search for a destination that yields a route close to target duration.
-    We expand search radius and try several bearings. Not perfect but robust for demo.
-    """
+    """Heuristic search for a destination that yields a route close to target duration."""
     minx, miny, maxx, maxy = NYC_BBOX
     best: Optional[RouteResult] = None
 
@@ -186,8 +184,6 @@ def load_nta_geojson() -> Tuple[dict, str]:
         return NTA_FALLBACK, "fallback"
 
 
-# Minimal fallback — one polygon per borough (keeps app working offline/CORS‑blocked)
-# --- UPDATED: Fields (NTAName, BoroName) now match the ArcGIS source schema ---
 NTA_FALLBACK = {
     "type": "FeatureCollection",
     "features": [
@@ -196,6 +192,7 @@ NTA_FALLBACK = {
             "properties": {"ntacode": "MN17", "NTAName": "Midtown-Midtown South", "BoroName": "Manhattan"},
             "geometry": {"type": "Polygon", "coordinates": [[[-73.9985, 40.7636], [-73.9850, 40.7648], [-73.9733, 40.7563], [-73.9786, 40.7480], [-73.9918, 40.7471], [-73.9985, 40.7636]]]}
         },
+        # ... other fallback features ...
         {
             "type": "Feature",
             "properties": {"ntacode": "BK09", "NTAName": "Williamsburg", "BoroName": "Brooklyn"},
@@ -218,13 +215,134 @@ NTA_FALLBACK = {
         }
     ]
 }
-# --- END UPDATE ---
+
+# --- NEW HTML/JS TEMPLATE FUNCTION (based on your example) ---
+def get_mapbox_html(
+    api_key: str,
+    map_style: str,
+    center_lon: float,
+    center_lat: float,
+    zoom: int,
+    points_json: str,
+    lines_json: str,
+    polygons_json: str,
+    colors: Dict[str, str]
+) -> str:
+    """Generates the HTML for the Mapbox GL JS map."""
+    
+    # Logic to add layers only if data is present
+    polygon_layers_js = ""
+    if polygons_json != 'null':
+        polygon_layers_js = f"""
+        map.addSource('nta-polygons', {{ 'type': 'geojson', 'data': {polygons_json} }});
+        map.addLayer({{
+            'id': 'nta-fill', 'type': 'fill', 'source': 'nta-polygons',
+            'paint': {{ 'fill-color': '{colors["polygons"]}', 'fill-opacity': 0.2 }}
+        }});
+        map.addLayer({{
+            'id': 'nta-line', 'type': 'line', 'source': 'nta-polygons',
+            'paint': {{ 'line-color': '{colors["polygons"]}', 'line-width': 1 }}
+        }});
+        """
+        
+    line_layers_js = ""
+    if lines_json != 'null':
+        line_layers_js = f"""
+        map.addSource('routes', {{ 'type': 'geojson', 'data': {lines_json} }});
+        map.addLayer({{
+            'id': 'routes-line', 'type': 'line', 'source': 'routes',
+            'layout': {{ 'line-join': 'round', 'line-cap': 'round' }},
+            'paint': {{ 'line-color': '{colors["lines"]}', 'line-width': 4 }}
+        }});
+        """
+    
+    point_layers_js = ""
+    popup_js = ""
+    if points_json != 'null':
+        point_layers_js = f"""
+        map.addSource('assets', {{ 'type': 'geojson', 'data': {points_json} }});
+        map.addLayer({{
+            'id': 'assets-points', 'type': 'circle', 'source': 'assets',
+            'paint': {{ 
+                'circle-radius': 5, 
+                'circle-color': '{colors["points"]}',
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#FFFFFF'
+            }}
+        }});
+        """
+        # Add popup logic only if points exist
+        popup_js = f"""
+        const popup = new mapboxgl.Popup({{ closeButton: false, closeOnClick: false }});
+        
+        map.on('mouseenter', 'assets-points', (e) => {{
+            map.getCanvas().style.cursor = 'pointer';
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const name = e.features[0].properties.name;
+            
+            popup.setLngLat(coordinates).setHTML(`<b>${{name}}</b>`).addTo(map);
+        }});
+        
+        map.on('mouseleave', 'assets-points', () => {{
+            map.getCanvas().style.cursor = '';
+            popup.remove();
+        }});
+        """
+
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8"><title>Mapbox Map</title>
+        <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+        <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css" rel="stylesheet">
+        <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.js"></script>
+        <style>
+            body {{ margin: 0; padding: 0; }} 
+            #map {{ position: absolute; top: 0; bottom: 0; width: 100%; }}
+            /* Popup style from your example */
+            .mapboxgl-popup-content {{ 
+                background-color: #333; color: white; font-family: "Helvetica Neue", Arial, sans-serif; 
+                font-size: 13px; border-radius: 5px; padding: 10px; 
+                box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
+            }}
+            .mapboxgl-popup-tip {{ border-top-color: #333 !important; border-bottom-color: #333 !important; }}
+        </style>
+    </head>
+    <body> 
+    <div id="map"></div>
+    <script>
+        mapboxgl.accessToken = '{api_key}';
+        const map = new mapboxgl.Map({{
+            container: 'map',
+            style: '{map_style}',
+            center: [{center_lon}, {center_lat}],
+            zoom: {zoom},
+            pitch: 45,
+            bearing: -17.6
+        }});
+        
+        map.on('load', () => {{
+            // Add layers here
+            {polygon_layers_js}
+            {line_layers_js}
+            {point_layers_js}
+        }});
+        
+        // Add popup interactivity
+        {popup_js}
+
+    </script>
+    </body>
+    </html>
+    """
 
 # =============================
 # UI — SIDEBAR CONTROLS
 # =============================
 st.set_page_config(page_title="NYC LAEP+ Mock", layout="wide")
-st.title("NYC LAEP+ Mock — Streamlit + Folium (Leaflet) + OSRM 90‑min Routes")
+# Updated title to reflect the change
+st.title("NYC LAEP+ Mock — Streamlit + Mapbox GL JS + OSRM 90‑min Routes")
 
 with st.sidebar:
     st.header("Layers")
@@ -234,11 +352,6 @@ with st.sidebar:
 
     st.header("Filter: Borough")
     selected_boros = st.multiselect("Visible boroughs", options=BOROUGHS, default=BOROUGHS)
-
-    # --- REMOVED ROUTING CONTROLS ---
-    # n_routes = st.slider("Number of demo routes", min_value=3, max_value=20, value=8, step=1)
-    # seed = st.number_input("Random seed", value=42, step=1)
-    # tolerance_min = st.slider("Duration tolerance (± minutes)", 5, 30, 10, step=5)
 
 # Use a fixed seed for consistent route generation
 random.seed(42)
@@ -305,102 +418,63 @@ if routes:
     st.dataframe(diag, use_container_width=True)
 
 # =============================
-# MAP — Folium / Leaflet
+# MAP — Mapbox GL JS / components.html
 # =============================
 st.subheader("Map")
 
-# Create Folium map
-# Note: Folium uses (lat, lon) for location
-
-# --- UPDATED: Explicitly add basemap as a TileLayer ---
-# Create a map with no default tiles
-m = folium.Map(
-    location=[DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
-    zoom_start=10,
-    tiles=None  # We will add our own TileLayer manually
-)
-
-# Add the correct basemap
-if MAPBOX_TOKEN:
-    # Corrected URL format for Mapbox Standard style
-    tileset = f"https://api.mapbox.com/styles/v1/mapbox/standard/tiles/256/{{z}}/{{x}}/{{y}}{{r}}?access_token={MAPBOX_TOKEN}"
-    attribution = '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> <strong><a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a></strong>'
-    folium.TileLayer(
-        tiles=tileset,
-        attr=attribution,
-        name="Mapbox Standard",
-        overlay=False,
-        control=True
-    ).add_to(m)
-else:
-    # Add default OpenStreetMap as a fallback
-    folium.TileLayer(
-        tiles="OpenStreetMap",
-        attr="© OpenStreetMap contributors",
-        name="OpenStreetMap",
-        overlay=False,
-        control=True
-    ).add_to(m)
-# --- END UPDATE ---
-
-
+# --- NEW: Prepare data for Mapbox GL JS ---
+# Convert all data to GeoJSON strings, or 'null' if hidden
+polygons_data_json = 'null'
 if show_polygons and len(nta_filtered.get("features", [])):
-    # Style function for polygons
-    def poly_style(feature):
-        return {
-            "fillColor": COLORS["polygons"],
-            "color": COLORS["polygons"],
-            "weight": 1,
-            "fillOpacity": 0.2,
-        }
-    
-    # Tooltip fields updated to match the new data source (NTAName)
-    folium.GeoJson(
-        nta_filtered,
-        name="NTAs (Polygons)",
-        style_function=poly_style,
-        tooltip=folium.GeoJsonTooltip(fields=["NTAName"], aliases=["NTA Name:"])
-    ).add_to(m)
+    polygons_data_json = json.dumps(nta_filtered)
 
+lines_data_json = 'null'
+if show_lines and routes:
+    line_features = []
+    for r in routes:
+        line_features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": r.coordinates  # OSRM provides [lon, lat]
+            },
+            "properties": {
+                "name": f"~{round(r.duration_s/60)} min route"
+            }
+        })
+    lines_data_json = json.dumps({"type": "FeatureCollection", "features": line_features})
+
+points_data_json = 'null'
 if show_points:
     points_shown = points_df[points_df["borough"].isin(selected_boros)]
-    
-    # Group points into a FeatureGroup
-    points_group = folium.FeatureGroup(name="Assets (Points)").add_to(m)
-    
+    point_features = []
     for _, row in points_shown.iterrows():
-        folium.CircleMarker(
-            location=[row["lat"], row["lon"]],
-            radius=5,
-            color=COLORS["points"],
-            fill=True,
-            fill_color=COLORS["points"],
-            fill_opacity=0.8,
-            popup=row["name"]
-        ).add_to(points_group)
+        point_features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [row["lon"], row["lat"]]
+            },
+            "properties": {
+                "name": row["name"]
+            }
+        })
+    points_data_json = json.dumps({"type": "FeatureCollection", "features": point_features})
 
-if show_lines and routes:
-    # Group lines into a FeatureGroup
-    lines_group = folium.FeatureGroup(name="Routes (Lines)").add_to(m)
+# --- NEW: Render map using components.html ---
+map_html = get_mapbox_html(
+    api_key=MAPBOX_TOKEN,
+    map_style="mapbox://styles/mapbox/standard",
+    center_lon=DEFAULT_CENTER[0],
+    center_lat=DEFAULT_CENTER[1],
+    zoom=10,
+    points_json=points_data_json,
+    lines_json=lines_data_json,
+    polygons_json=polygons_data_json,
+    colors=COLORS
+)
+components.html(map_html, height=600, scrolling=False)
 
-    for r in routes:
-        # Folium PolyLine needs (lat, lon) coordinates
-        coords_swapped = [(lat, lon) for lon, lat in r.coordinates]
-        popup_text = f"~{round(r.duration_s/60)} min route"
-        
-        folium.PolyLine(
-            coords_swapped,
-            color=COLORS["lines"],
-            weight=4,
-            opacity=0.8,
-            popup=popup_text
-        ).add_to(lines_group)
-
-# Add LayerControl to toggle layers
-folium.LayerControl().add_to(m)
-
-# Render the map in Streamlit
-st_folium(m, height=600, use_container_width=True)
 
 # =============================
 # SMOKE TESTS
@@ -421,11 +495,10 @@ with st.expander("Run smoke tests"):
 # NOTES
 # =============================
 st.markdown("""
-- This app uses `folium` and `streamlit-folium` to render a Leaflet map.
-- All three layers (points, lines, polygons) are now supported.
-- NTA data source has been updated for better reliability.
+- This app now uses `streamlit.components.v1.html` and `mapbox-gl-js` to render the map.
+- `folium` and `streamlit-folium` are no longer used.
+- All three layers (points, lines, polygons) are supported.
 - App is set to find 5 routes for demo speed.
 - OSRM_BASE can be overridden in `st.secrets` for a private OSRM server.
 - Public OSRM is rate-limited; for reliability, run your own OSRM backend.
-- For true isochrones (90-min areas), consider Valhalla/OpenRouteService.
 """)
