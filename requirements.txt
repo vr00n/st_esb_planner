@@ -1,5 +1,4 @@
 pandas
 requests
 streamlit
-folium
-streamlit-folium
+shapely
