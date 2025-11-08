@@ -3,7 +3,7 @@
 # Features:
 # - Renders map using streamlit.components.v1.html and mapbox-gl-js
 # - Toggleable layers: depots (points), routes (lines), NTAs (polygons), flood risk (polygons)
-# - **Flood Risk layer now uses graduated colors based on the 'FVI' property**
+# - **Flood Risk layer now uses graduated RED ramp based on 'FVI_storm_surge_2050s' (1-5)**
 # - Borough filters across all layers
 # - Mock depots generated within NTA boundaries with electrical capacity data
 # - New filter for "Electrification Speed"
@@ -72,7 +72,7 @@ N_ROUTES_PER_BORO: int = 3 # <-- UPDATED logic
 COLORS: Dict[str, str] = {
     "polygons": "#8c564b", # Brown/gray for NTA lines
     "lines": "#1f77b4",      # Blue for routes
-    # "flood_risk" is no longer a single color
+    # "flood_risk" is no longer a single color, it's a ramp
     # Depot colors
     "depot_fast": "#2ca02c",  # Green
     "depot_medium": "#ff7f0e", # Orange
@@ -333,7 +333,7 @@ def get_mapbox_html(
         }});
         """
 
-    # --- FVI Polygon Layer (UPDATED with graduated colors) ---
+    # --- FVI Polygon Layer (UPDATED with correct property name) ---
     fvi_layers_js = ""
     if fvi_json != 'null':
         fvi_layers_js = f"""
@@ -344,12 +344,18 @@ def get_mapbox_html(
                 'fill-color': [
                     'interpolate',
                     ['linear'],
-                    ['get', 'FVI'], // <-- ASSUMED property name
-                    0,  '#ffffcc', // Light Yellow (Low Risk)
-                    5,  '#ff9900', // Orange (Medium Risk)
-                    10, '#d62728'  // Red (High Risk)
+                    // Use 'coalesce' to handle nulls: it picks the first non-null value.
+                    // We default null to 0, which is set to be transparent.
+                    // *** THIS IS THE CORRECTED PROPERTY NAME ***
+                    ['to-number', ['coalesce', ['get', 'FVI_storm_surge_2050s'], 0]],
+                    0,  'rgba(0, 0, 0, 0)', // 0 = transparent
+                    1,  '#fee5d9', // 1 = Lightest Red
+                    2,  '#fcbba1',
+                    3,  '#fc9272',
+                    4,  '#fb6a4a',
+                    5,  '#cb181d'  // 5 = Darkest Red
                 ],
-                'fill-opacity': 0.7
+                'fill-opacity': 0.7 // Set a single opacity for all non-transparent parts
             }}
         }}); 
         """
@@ -628,7 +634,7 @@ components.html(map_html, height=800, scrolling=False)
 st.subheader("Debug & Status")
 status_table = pd.DataFrame([
     {"key": "nta_status", "value": f"{nta_status} ({len(nta_filtered.get('features', []))} features)"},
-    {"key": "fvi_status", "value": f"{fvi_status} ({len(fvi_filtered.get('features', []))} features)"}, # <-- ADDED
+    {"key":"fvi_status", "value": f"{fvi_status} ({len(fvi_filtered.get('features', []))} features)"}, # <-- ADDED
     {"key": "depots_shown", "value": f"{str(len(points_df))} (after filters)"}, 
     {"key": "routes_found", "value": f"{str(len(routes))}"},
     {"key": "osrm_base", "value": OSRM_BASE},
