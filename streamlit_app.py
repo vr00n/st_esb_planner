@@ -52,8 +52,8 @@ OSRM_BASE: str = st.secrets.get("OSRM_BASE", "https://router.project-osrm.org/ro
 NYC_BBOX: Tuple[float, float, float, float] = (-74.25559, 40.49612, -73.70001, 40.91553)
 DEFAULT_CENTER: Tuple[float, float] = (-73.95, 40.72) # (lon, lat)
 
-# Switched to a more reliable ArcGIS GeoJSON endpoint to load all NTAs
-NTA2020_GEOJSON_URL: str = "https://services5.arcgis.com/GfwWNkhEL9T7a17V/arcgis/rest/services/NYC_NTA_2020/FeatureServer/0/query?where=1%3D1&outFields=*&f=geojson"
+# Switched to a more reliable NYC Open Data GeoJSON endpoint
+NTA2020_GEOJSON_URL: str = "https://data.cityofnewyork.us/api/geospatial/d3_NTA2020?method=export&format=GeoJSON"
 TARGET_ROUTE_SECONDS: int = 90 * 60  # 90 minutes
 N_ROUTES_TO_FIND: int = 5 # Hardcoded number of routes
 
@@ -277,8 +277,8 @@ if show_lines and len(selected_boros) > 0:
 st.subheader("Debug & Status")
 status_table = pd.DataFrame([
     {"key": "nta_status", "value": f"{nta_status} ({len(nta_filtered.get('features', []))} features)"},
-    {"key": "points_count", "value": len(points_df)},
-    {"key": "routes_count", "value": f"{len(routes)} (target: {N_ROUTES_TO_FIND})"},
+    {"key": "points_count", "value": str(len(points_df))}, # Cast to string
+    {"key": "routes_count", "value": f"{str(len(routes))} (target: {N_ROUTES_TO_FIND})"}, # Cast to string
     {"key": "osrm_base", "value": OSRM_BASE},
 ])
 st.table(status_table)
@@ -315,12 +315,12 @@ if show_polygons and len(nta_filtered.get("features", [])):
             "fillOpacity": 0.2,
         }
     
-    # Tooltip fields updated for new data source
+    # Tooltip fields updated for new data source - and to match the fallback
     folium.GeoJson(
         nta_filtered,
         name="NTAs (Polygons)",
         style_function=poly_style,
-        tooltip=folium.GeoJsonTooltip(fields=["NTAName"], aliases=["NTA Name:"])
+        tooltip=folium.GeoJsonTooltip(fields=["ntaname"], aliases=["NTA Name:"])
     ).add_to(m)
 
 if show_points:
