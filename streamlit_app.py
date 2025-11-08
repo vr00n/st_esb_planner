@@ -1,5 +1,5 @@
 # streamlit_app.py
-# NYC LAEP+ mock in Streamlit using Mapbox 3D basemap + OSRM routes.
+# NYC LAEP+ mock in Streamlit using Folium/Leaflet + OSRM routes.
 # Features:
 # - Toggleable layers: points, transportation polylines (90‑minute OSRM routes), polygons (2020 NTAs)
 # - Borough filters across all layers
@@ -19,15 +19,15 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-import pydeck as pdk
 import requests
 import streamlit as st
+import folium
+from streamlit_folium import st_folium
 
 # =============================
 # CONFIG (keys via st.secrets / env)
 # =============================
 # Set in .streamlit/secrets.toml:
-# MAPBOX_TOKEN = "pk..."
 # OSRM_BASE = "https://your-osrm-host/route/v1/driving"  # optional, defaults to public demo
 # DEBUG = true  # optional: echoes debug to sidebar
 
@@ -48,18 +48,13 @@ def ui_debug(message: str) -> None:
         # Never crash the app from debug output
         pass
 
-MAPBOX_TOKEN: Optional[str] = st.secrets.get("MAPBOX_TOKEN") or os.getenv("MAPBOX_TOKEN")
-if not MAPBOX_TOKEN:
-    ui_debug("MAPBOX_TOKEN missing from secrets and env")
-    st.error("Missing MAPBOX_TOKEN. Add it to st.secrets or environment.")
-    st.stop()
-
-pdk.settings.mapbox_api_key = MAPBOX_TOKEN
+# MAPBOX_TOKEN is no longer required for Folium's default OpenStreetMap tiles
+# We can remove the check for it.
 
 OSRM_BASE: str = st.secrets.get("OSRM_BASE", "https://router.project-osrm.org/route/v1/driving")
 
 NYC_BBOX: Tuple[float, float, float, float] = (-74.25559, 40.49612, -73.70001, 40.91553)
-DEFAULT_CENTER: Tuple[float, float] = (-73.95, 40.72)
+DEFAULT_CENTER: Tuple[float, float] = (-73.95, 40.72) # (lon, lat)
 
 NTA2020_GEOJSON_URL: str = "https://data.cityofnewyork.us/resource/qb5r-6dgf.geojson?$limit=5000"
 TARGET_ROUTE_SECONDS: int = 90 * 60  # 90 minutes
@@ -222,7 +217,7 @@ NTA_FALLBACK = {
 # UI — SIDEBAR CONTROLS
 # =============================
 st.set_page_config(page_title="NYC LAEP+ Mock", layout="wide")
-st.title("NYC LAEP+ Mock — Streamlit + Mapbox 3D + OSRM 90‑min Routes")
+st.title("NYC LAEP+ Mock — Streamlit + Folium (Leaflet) + OSRM 90‑min Routes")
 
 with st.sidebar:
     st.header("Layers")
@@ -300,70 +295,77 @@ if routes:
     st.dataframe(diag, use_container_width=True)
 
 # =============================
-# LAYERS — pydeck / deck.gl
+# MAP — Folium / Leaflet
 # =============================
-layers = []
+st.subheader("Map")
+
+# Create Folium map
+# Note: Folium uses (lat, lon) for location
+m = folium.Map(location=[DEFAULT_CENTER[1], DEFAULT_CENTER[0]], zoom_start=10)
 
 if show_polygons and len(nta_filtered.get("features", [])):
-    layers.append(
-        pdk.Layer(
-            "GeoJsonLayer",
-            nta_filtered,
-            stroked=True,
-            filled=True,
-            get_fill_color=[44, 160, 44, 50],
-            get_line_color=[44, 160, 44, 180],
-            get_line_width=1,
-            pickable=True,
-            auto_highlight=True,
-        )
-    )
+    # Style function for polygons
+    def poly_style(feature):
+        return {
+            "fillColor": COLORS["polygons"],
+            "color": COLORS["polygons"],
+            "weight": 1,
+            "fillOpacity": 0.2,
+        }
+    
+    folium.GeoJson(
+        nta_filtered,
+        name="NTAs (Polygons)",
+        style_function=poly_style,
+        tooltip=folium.GeoJsonTooltip(fields=["ntaname"], aliases=["NTA Name:"])
+    ).add_to(m)
 
 if show_points:
     points_shown = points_df[points_df["borough"].isin(selected_boros)]
-    layers.append(
-        pdk.Layer(
-            "ScatterplotLayer",
-            data=points_shown,
-            get_position="[lon, lat]",
-            get_radius=35,
-            radius_units="pixels",
-            get_fill_color=[31, 119, 180, 220],
-            pickable=True,
-        )
-    )
+    
+    # Group points into a FeatureGroup
+    points_group = folium.FeatureGroup(name="Assets (Points)").add_to(m)
+    
+    for _, row in points_shown.iterrows():
+        folium.CircleMarker(
+            location=[row["lat"], row["lon"]],
+            radius=5,
+            color=COLORS["points"],
+            fill=True,
+            fill_color=COLORS["points"],
+            fill_opacity=0.8,
+            popup=row["name"]
+        ).add_to(points_group)
 
 if show_lines and routes:
-    paths = [{"path": r.coordinates, "name": f"~{round(r.duration_s/60)} min"} for r in routes]
-    layers.append(
-        pdk.Layer(
-            "PathLayer",
-            data=paths,
-            get_path="path",
-            get_width=4,
-            width_units="pixels",
-            get_color=[255, 127, 14, 230],
-            pickable=True,
-        )
-    )
+    # Group lines into a FeatureGroup
+    lines_group = folium.FeatureGroup(name="Routes (Lines)").add_to(m)
 
-view_state = pdk.ViewState(latitude=DEFAULT_CENTER[1], longitude=DEFAULT_CENTER[0], zoom=10, pitch=60, bearing=20)
+    for r in routes:
+        # Folium PolyLine needs (lat, lon) coordinates
+        coords_swapped = [(lat, lon) for lon, lat in r.coordinates]
+        popup_text = f"~{round(r.duration_s/60)} min route"
+        
+        folium.PolyLine(
+            coords_swapped,
+            color=COLORS["lines"],
+            weight=4,
+            opacity=0.8,
+            popup=popup_text
+        ).add_to(lines_group)
 
-r = pdk.Deck(
-    layers=layers,
-    initial_view_state=view_state,
-    map_style="mapbox://styles/mapbox/standard",  # 3D basemap
-    tooltip={"text": "{name}"},
-)
+# Add LayerControl to toggle layers
+folium.LayerControl().add_to(m)
 
-st.pydeck_chart(r, use_container_width=True)
+# Render the map in Streamlit
+st_folium(m, height=600, use_container_width=True)
 
 # =============================
 # SMOKE TESTS
 # =============================
 with st.expander("Run smoke tests"):
     tests = []
-    tests.append({"test": "Has Mapbox token", "pass": bool(MAPBOX_TOKEN)})
+    # tests.append({"test": "Has Mapbox token", "pass": bool(MAPBOX_TOKEN)}) # No longer needed
     tests.append({"test": "Points present", "pass": len(points_df) > 0})
     tests.append({"test": "NTA features present", "pass": len(nta_filtered.get('features', [])) > 0})
     if show_lines and routes:
@@ -375,7 +377,11 @@ with st.expander("Run smoke tests"):
 # =============================
 # NOTES
 # =============================
-# - Provide MAPBOX_TOKEN in st.secrets or env; PathLayer uses Mapbox via pydeck.
-# - OSRM_BASE can be overridden in st.secrets for a private OSRM server.
-# - Public OSRM is rate‑limited; for reliability, run your own OSRM backend.
-# - For true isochrones (90‑min areas), consider Valhalla/OpenRouteService.
+st.markdown("""
+- This app uses `folium` and `streamlit-folium` to render a Leaflet map.
+- All three layers (points, lines, polygons) are now supported.
+- A `MAPBOX_TOKEN` is not required for the default OpenStreetMap basemap.
+- OSRM_BASE can be overridden in `st.secrets` for a private OSRM server.
+- Public OSRM is rate-limited; for reliability, run your own OSRM backend.
+- For true isochrones (90-min areas), consider Valhalla/OpenRouteService.
+""")
