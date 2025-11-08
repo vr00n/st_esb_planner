@@ -4,10 +4,10 @@
 # - Renders map using streamlit.components.v1.html and mapbox-gl-js
 # - Toggleable layers: points, transportation polylines (90‑minute OSRM routes), polygons (2020 NTAs)
 # - Borough filters across all layers
-# - Dummy points grid covering NYC
+# - **Mock points generated within NTA boundaries**
 # - NTAs fetched from NYC Open Data with robust fallback
-# - Debugging logs, structured outputs, and smoke tests
-# - 5 hardcoded routes for demo speed.
+# - **Dynamic spinners and status updates**
+# - **3 hardcoded routes for demo speed.**
 
 import json
 import math
@@ -21,7 +21,9 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 import requests
 import streamlit as st
-import streamlit.components.v1 as components  # <-- ADDED THIS
+import streamlit.components.v1 as components
+from shapely.geometry import Point, shape  # <-- ADDED SHAPELY
+from shapely.ops import unary_union       # <-- ADDED SHAPELY
 
 # --- REMOVED FOLIUM ---
 # import folium
@@ -67,7 +69,7 @@ DEFAULT_CENTER: Tuple[float, float] = (-73.95, 40.72) # (lon, lat)
 # Use the local GeoJSON file
 NTA2020_GEOJSON_PATH: str = "NYC_Neighborhood_Tabulation_Areas_2020_-2131974656277759428.geojson"
 TARGET_ROUTE_SECONDS: int = 90 * 60  # 90 minutes
-N_ROUTES_TO_FIND: int = 5 # Hardcoded number of routes
+N_ROUTES_TO_FIND: int = 3 # Hardcoded number of routes (updated from 5)
 
 COLORS: Dict[str, str] = {
     "points": "#1f77b4",
@@ -88,29 +90,69 @@ class RouteResult:
     status: str
     attempts: int
 
-# ... (rand_between, grid_points, osrm_route, find_route_near_duration, load_nta_geojson, NTA_FALLBACK all remain the same) ...
-# ... (copying them here for completeness) ...
-
 def rand_between(a: float, b: float) -> float:
     return random.random() * (b - a) + a
 
 
-def grid_points(cols: int = 18, rows: int = 12, bbox: Tuple[float, float, float, float] = NYC_BBOX) -> List[Tuple[float, float, str]]:
-    """Return a list of (lon, lat, borough) covering NYC."""
-    minx, miny, maxx, maxy = bbox
-    dx = (maxx - minx) / (cols - 1)
-    dy = (maxy - miny) / (rows - 1)
+# --- UPDATED grid_points function ---
+@st.cache_data(show_spinner=False) # Cache the expensive point generation
+def grid_points_in_ntas(
+    ntas_geojson: dict,
+    cols: int = 18,
+    rows: int = 12,
+    bbox: Tuple[float, float, float, float] = NYC_BBOX
+) -> List[Tuple[float, float, str]]:
+    """Generates a grid of points that fall *within* NTA boundaries."""
+    ui_debug("Generating points within NTA boundaries...")
     out = []
-    for r in range(rows):
-        for c in range(cols):
-            jx = rand_between(-dx * 0.2, dx * 0.2)
-            jy = rand_between(-dy * 0.2, dy * 0.2)
-            lon = minx + c * dx + jx
-            lat = miny + r * dy + jy
-            borough = BOROUGHS[(r + c) % len(BOROUGHS)]
-            out.append((lon, lat, borough))
-    return out
+    
+    try:
+        # Create a list of (Shapely_Polygon, boro_name) tuples
+        nta_polygons = []
+        for feature in ntas_geojson.get("features", []):
+            try:
+                geom = shape(feature["geometry"])
+                boro = feature["properties"].get("BoroName", "Unknown")
+                nta_polygons.append((geom, boro))
+            except Exception as e:
+                ui_debug(f"Skipping invalid NTA feature: {e}")
+        
+        if not nta_polygons:
+            ui_debug("No valid NTA polygons found to generate points.")
+            return []
 
+        # Create a single unioned shape for fast point-in-polygon checks
+        union_shape = unary_union([p for p, b in nta_polygons])
+
+        minx, miny, maxx, maxy = bbox
+        dx = (maxx - minx) / (cols - 1)
+        dy = (maxy - miny) / (rows - 1)
+
+        for r in range(rows):
+            for c in range(cols):
+                jx = rand_between(-dx * 0.2, dx * 0.2)
+                jy = rand_between(-dy * 0.2, dy * 0.2)
+                lon = minx + c * dx + jx
+                lat = miny + r * dy + jy
+                
+                point = Point(lon, lat)
+                
+                # Check if the point is within the combined NYC shape
+                if point.within(union_shape):
+                    # Find which NTA it's in to get the correct borough
+                    found_boro = "Unknown"
+                    for poly, boro in nta_polygons:
+                        if point.within(poly):
+                            found_boro = boro
+                            break
+                    out.append((lon, lat, found_boro))
+                    
+        ui_debug(f"Generated {len(out)} points inside NTAs.")
+        return out
+
+    except Exception as e:
+        ui_debug(f"Error in grid_points_in_ntas: {e}")
+        return [] # Return empty list on error
 
 def osrm_route(origin: Tuple[float, float], destination: Tuple[float, float], timeout_s: int = 12) -> Optional[RouteResult]:
     """Call OSRM server for a route."""
@@ -167,7 +209,7 @@ def find_route_near_duration(origin: Tuple[float, float], target_s: int = TARGET
     return best
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False) # Spinner is handled manually
 def load_nta_geojson() -> Tuple[dict, str]:
     """Load 2020 NTA GeoJSON from local file. Returns (geojson, status). Status in {loaded, fallback}."""
     try:
@@ -216,7 +258,7 @@ NTA_FALLBACK = {
     ]
 }
 
-# --- NEW HTML/JS TEMPLATE FUNCTION (based on your example) ---
+# --- HTML/JS TEMPLATE FUNCTION (remains the same) ---
 def get_mapbox_html(
     api_key: str,
     map_style: str,
@@ -359,14 +401,18 @@ random.seed(42)
 # =============================
 # DATA — POINTS, ROUTES, POLYGONS
 # =============================
-# Points
-grid = grid_points()
-points_df = pd.DataFrame(grid, columns=["lon", "lat", "borough"])
-points_df["name"] = [f"Mock Site {i+1}" for i in range(len(points_df))]
+
+# --- UPDATED Data Loading with Spinners ---
+with st.spinner("Loading NTA boundaries..."):
+    ntas_geojson, nta_status = load_nta_geojson()
+
+with st.spinner("Generating mock asset points..."):
+    # Points - Pass the loaded geojson to the new function
+    grid = grid_points_in_ntas(ntas_geojson)
+    points_df = pd.DataFrame(grid, columns=["lon", "lat", "borough"])
+    points_df["name"] = [f"Mock Site {i+1}" for i in range(len(points_df))]
 
 # Polygons (NTAs)
-ntas_geojson, nta_status = load_nta_geojson()
-
 # Filter NTA by borough
 filtered_features = []
 for f in ntas_geojson.get("features", []):
@@ -377,50 +423,28 @@ for f in ntas_geojson.get("features", []):
         filtered_features.append(f)
 nta_filtered = {"type": "FeatureCollection", "features": filtered_features}
 
-# Routes — heuristic search for near‑90‑minute routes from random origins in selected boroughs
+# Routes — heuristic search with st.status
 routes: List[RouteResult] = []
 if show_lines and len(selected_boros) > 0:
     candidate_points = [tuple(row) for row in points_df[["lon", "lat", "borough"]].values if row[2] in selected_boros]
     random.shuffle(candidate_points)
-    # Use hardcoded N_ROUTES_TO_FIND
     candidate_points = candidate_points[: max(N_ROUTES_TO_FIND * 2, N_ROUTES_TO_FIND + 2)]
 
-    for origin in candidate_points[:N_ROUTES_TO_FIND]:
-        o = (origin[0], origin[1])
-        res = find_route_near_duration(o, target_s=TARGET_ROUTE_SECONDS, attempts=7)
-        if res:
-            routes.append(res)
-        time.sleep(0.2)  # be gentle on OSRM
-
-# =============================
-# DEBUG OUTPUTS
-# =============================
-st.subheader("Debug & Status")
-status_table = pd.DataFrame([
-    {"key": "nta_status", "value": f"{nta_status} ({len(nta_filtered.get('features', []))} features)"},
-    {"key": "points_count", "value": str(len(points_df))}, # Cast to string
-    {"key": "routes_count", "value": f"{str(len(routes))} (target: {N_ROUTES_TO_FIND})"}, # Cast to string
-    {"key": "osrm_base", "value": OSRM_BASE},
-])
-st.table(status_table)
-
-if routes:
-    diag = pd.DataFrame([
-        {
-            "duration_min": round(r.duration_s / 60.0, 1),
-            "distance_km": round(r.distance_m / 1000.0, 1),
-            "attempts": r.attempts,
-            "status": r.status,
-        }
-        for r in routes
-    ])
-    st.caption("Route diagnostics (target = 90 minutes)")
-    st.dataframe(diag, use_container_width=True)
+    # --- UPDATED to use st.status ---
+    with st.status(f"Searching for {N_ROUTES_TO_FIND} routes...", expanded=False) as status:
+        for i, origin in enumerate(candidate_points[:N_ROUTES_TO_FIND]):
+            status.update(label=f"Searching for route {i+1} of {N_ROUTES_TO_FIND}...")
+            o = (origin[0], origin[1])
+            res = find_route_near_duration(o, target_s=TARGET_ROUTE_SECONDS, attempts=7)
+            if res:
+                routes.append(res)
+            time.sleep(0.2)  # be gentle on OSRM
+        status.update(label=f"Found {len(routes)} routes.", state="complete")
 
 # =============================
 # MAP — Mapbox GL JS / components.html
 # =============================
-st.subheader("Map")
+# --- MOVED UP, Subheader removed ---
 
 # --- NEW: Prepare data for Mapbox GL JS ---
 # Convert all data to GeoJSON strings, or 'null' if hidden
@@ -473,8 +497,35 @@ map_html = get_mapbox_html(
     polygons_json=polygons_data_json,
     colors=COLORS
 )
-components.html(map_html, height=600, scrolling=False)
+# --- UPDATED height to 800px ---
+components.html(map_html, height=800, scrolling=False)
 
+
+# =============================
+# DEBUG OUTPUTS
+# --- MOVED DOWN ---
+# =============================
+st.subheader("Debug & Status")
+status_table = pd.DataFrame([
+    {"key": "nta_status", "value": f"{nta_status} ({len(nta_filtered.get('features', []))} features)"},
+    {"key": "points_count", "value": f"{str(len(points_df))} (inside NTAs)"}, # Cast to string
+    {"key": "routes_count", "value": f"{str(len(routes))} (target: {N_ROUTES_TO_FIND})"}, # Cast to string
+    {"key": "osrm_base", "value": OSRM_BASE},
+])
+st.table(status_table)
+
+if routes:
+    diag = pd.DataFrame([
+        {
+            "duration_min": round(r.duration_s / 60.0, 1),
+            "distance_km": round(r.distance_m / 1000.0, 1),
+            "attempts": r.attempts,
+            "status": r.status,
+        }
+        for r in routes
+    ])
+    st.caption("Route diagnostics (target = 90 minutes)")
+    st.dataframe(diag, use_container_width=True)
 
 # =============================
 # SMOKE TESTS
@@ -498,7 +549,7 @@ st.markdown("""
 - This app now uses `streamlit.components.v1.html` and `mapbox-gl-js` to render the map.
 - `folium` and `streamlit-folium` are no longer used.
 - All three layers (points, lines, polygons) are supported.
-- App is set to find 5 routes for demo speed.
+- App is set to find 3 routes for demo speed.
 - OSRM_BASE can be overridden in `st.secrets` for a private OSRM server.
 - Public OSRM is rate-limited; for reliability, run your own OSRM backend.
 """)
