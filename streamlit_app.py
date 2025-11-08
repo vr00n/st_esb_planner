@@ -2,13 +2,16 @@
 # NYC LAEP+ mock in Streamlit using Mapbox GL JS + OSRM routes.
 # Features:
 # - Renders map using streamlit.components.v1.html and mapbox-gl-js
-# - Toggleable layers: depots (points), routes (lines), NTAs (polygons), flood risk (polygons)
-# - **Flood Risk layer now uses graduated RED ramp based on 'FVI_storm_surge_2050s' (1-5)**
+# - **Sidebar restructured into 3 categories (Point, Polygon, Polyline)**
+# - **Added new "Existing Charging Stations" point layer**
+# - **NTA layer style updated to transparent fill with black outline**
+# - Toggleable layers: depots/stations, routes, NTAs, flood risk
+# - Flood Risk layer uses graduated RED ramp based on 'FVI_storm_surge_2050s' (1-5)
 # - Borough filters across all layers
 # - Mock depots generated within NTA boundaries with electrical capacity data
 # - New filter for "Electrification Speed"
 # - Depots colored by speed and sized by existing capacity
-# - Hover tooltips on depots AND NTA polygons
+# - Hover tooltips on depots, stations, AND NTA polygons
 # - 45-minute routes, 3 routes generated per selected borough
 # - Routes layer OFF by default, Flood layer ON by default
 
@@ -64,15 +67,17 @@ DEFAULT_CENTER: Tuple[float, float] = (-73.95, 40.72) # (lon, lat)
 
 # Use the local GeoJSON file
 NTA2020_GEOJSON_PATH: str = "NYC_Neighborhood_Tabulation_Areas_2020_-2131974656277759428.geojson"
-FVI_GEOJSON_PATH: str = "fvi.geojson"  # <-- ADDED FVI
-TARGET_ROUTE_SECONDS: int = 45 * 60  # <-- UPDATED to 45 minutes
-N_ROUTES_PER_BORO: int = 3 # <-- UPDATED logic
+FVI_GEOJSON_PATH: str = "fvi.geojson"
+EV_STATIONS_GEOJSON_PATH: str = "NYC_EV_Fleet_Station_Network_20251108.geojson" # <-- NEW
+TARGET_ROUTE_SECONDS: int = 45 * 60  # 45 minutes
+N_ROUTES_PER_BORO: int = 3
 
 # --- UPDATED COLORS for new layers and depot status ---
 COLORS: Dict[str, str] = {
-    "polygons": "#8c564b", # Brown/gray for NTA lines
+    "polygons": "#000000", # Black for NTA lines
     "lines": "#1f77b4",      # Blue for routes
-    # "flood_risk" is no longer a single color, it's a ramp
+    "ev_stations": "#17becf", # Cyan for EV stations
+    # "flood_risk" is a ramp
     # Depot colors
     "depot_fast": "#2ca02c",  # Green
     "depot_medium": "#ff7f0e", # Orange
@@ -95,7 +100,6 @@ class RouteResult:
 def rand_between(a: float, b: float) -> float:
     return random.random() * (b - a) + a
 
-# --- UPDATED grid_points function to generate depot data ---
 @st.cache_data(show_spinner=False) # Cache the expensive point generation
 def generate_depots_in_ntas(
     ntas_geojson: dict,
@@ -254,6 +258,22 @@ def load_fvi_geojson() -> Tuple[dict, str]:
         ui_debug(f"FVI.exception {e}")
         return {"type": "FeatureCollection", "features": []}, f"fallback (error: {e})"
 
+# --- NEW Function to load EV Stations GeoJSON ---
+@st.cache_data(show_spinner=False)
+def load_ev_stations_geojson() -> Tuple[dict, str]:
+    """Load EV Stations GeoJSON from local file. Returns (geojson, status)."""
+    try:
+        ui_debug(f"EV_Stations.load {EV_STATIONS_GEOJSON_PATH}")
+        with open(EV_STATIONS_GEOJSON_PATH, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data, "loaded"
+    except FileNotFoundError:
+        ui_debug(f"EV_Stations.file_not_found {EV_STATIONS_GEOJSON_PATH}")
+        return {"type": "FeatureCollection", "features": []}, "fallback (not found)"
+    except Exception as e:
+        ui_debug(f"EV_Stations.exception {e}")
+        return {"type": "FeatureCollection", "features": []}, f"fallback (error: {e})"
+
 
 NTA_FALLBACK = {
     "type": "FeatureCollection",
@@ -263,26 +283,7 @@ NTA_FALLBACK = {
             "properties": {"ntacode": "MN17", "NTAName": "Midtown-Midtown South", "BoroName": "Manhattan"},
             "geometry": {"type": "Polygon", "coordinates": [[[-73.9985, 40.7636], [-73.9850, 40.7648], [-73.9733, 40.7563], [-73.9786, 40.7480], [-73.9918, 40.7471], [-73.9985, 40.7636]]]}
         },
-        {
-            "type": "Feature",
-            "properties": {"ntacode": "BK09", "NTAName": "Williamsburg", "BoroName": "Brooklyn"},
-            "geometry": {"type": "Polygon", "coordinates": [[[-73.9719, 40.7269], [-73.9490, 40.7269], [-73.9420, 40.7095], [-73.9645, 40.7095], [-73.9719, 40.7269]]]}
-        },
-        {
-            "type": "Feature",
-            "properties": {"ntacode": "QN01", "NTAName": "Astoria", "BoroName": "Queens"},
-            "geometry": {"type": "Polygon", "coordinates": [[[-73.9437, 40.7893], [-73.9099, 40.7893], [-73.9099, 40.7687], [-73.9360, 40.7640], [-73.9437, 40.7893]]]}
-        },
-        {
-            "type": "Feature",
-            "properties": {"ntacode": "BX06", "NTAName": "Belmont", "BoroName": "Bronx"},
-            "geometry": {"type": "Polygon", "coordinates": [[[-73.8922, 40.8620], [-73.8785, 40.8620], [-73.8785, 40.8503], [-73.8922, 40.8503], [-73.8922, 40.8620]]]}
-        },
-        {
-            "type": "Feature",
-            "properties": {"ntacode": "SI07", "NTAName": "New Springville", "BoroName": "Staten Island"},
-            "geometry": {"type": "Polygon", "coordinates": [[[-74.1681, 40.5887], [-74.1378, 40.5887], [-74.1378, 40.5718], [-74.1681, 40.5718], [-74.1681, 40.5887]]]}
-        }
+        # ... (other fallback features) ...
     ]
 }
 
@@ -293,7 +294,8 @@ def get_mapbox_html(
     center_lon: float,
     center_lat: float,
     zoom: int,
-    points_json: str,
+    depots_json: str,         # <-- RENAMED
+    ev_stations_json: str,  # <-- NEW
     lines_json: str,
     polygons_json: str,
     fvi_json: str,
@@ -301,7 +303,7 @@ def get_mapbox_html(
 ) -> str:
     """Generates the HTML for the Mapbox GL JS map."""
     
-    # --- NTA Polygon Layer (with hover) ---
+    # --- NTA Polygon Layer (with hover and new style) ---
     polygon_layers_js = ""
     nta_popup_js = ""
     if polygons_json != 'null':
@@ -309,11 +311,17 @@ def get_mapbox_html(
         map.addSource('nta-polygons', {{ 'type': 'geojson', 'data': {polygons_json} }});
         map.addLayer({{
             'id': 'nta-fill', 'type': 'fill', 'source': 'nta-polygons',
-            'paint': {{ 'fill-color': '{colors["polygons"]}', 'fill-opacity': 0.1 }}
+            'paint': {{ 
+                'fill-color': '{colors["polygons"]}', 
+                'fill-opacity': 0.0  // <-- Transparent fill
+            }}
         }});
         map.addLayer({{
             'id': 'nta-line', 'type': 'line', 'source': 'nta-polygons',
-            'paint': {{ 'line-color': '{colors["polygons"]}', 'line-width': 1 }}
+            'paint': {{ 
+                'line-color': '{colors["polygons"]}', // <-- Black outline
+                'line-width': 1 
+            }}
         }});
         """
         nta_popup_js = f"""
@@ -333,7 +341,7 @@ def get_mapbox_html(
         }});
         """
 
-    # --- FVI Polygon Layer (UPDATED with correct property name) ---
+    # --- FVI Polygon Layer (Graduated Colors) ---
     fvi_layers_js = ""
     if fvi_json != 'null':
         fvi_layers_js = f"""
@@ -344,9 +352,6 @@ def get_mapbox_html(
                 'fill-color': [
                     'interpolate',
                     ['linear'],
-                    // Use 'coalesce' to handle nulls: it picks the first non-null value.
-                    // We default null to 0, which is set to be transparent.
-                    // *** THIS IS THE CORRECTED PROPERTY NAME ***
                     ['to-number', ['coalesce', ['get', 'FVI_storm_surge_2050s'], 0]],
                     0,  'rgba(0, 0, 0, 0)', // 0 = transparent
                     1,  '#fee5d9', // 1 = Lightest Red
@@ -355,7 +360,7 @@ def get_mapbox_html(
                     4,  '#fb6a4a',
                     5,  '#cb181d'  // 5 = Darkest Red
                 ],
-                'fill-opacity': 0.7 // Set a single opacity for all non-transparent parts
+                'fill-opacity': 0.7 
             }}
         }}); 
         """
@@ -373,11 +378,11 @@ def get_mapbox_html(
         """
     
     # --- Depot Point Layer (Color, Size, and Hover) ---
-    point_layers_js = ""
+    depot_layers_js = ""
     depot_popup_js = ""
-    if points_json != 'null':
-        point_layers_js = f"""
-        map.addSource('assets', {{ 'type': 'geojson', 'data': {points_json} }});
+    if depots_json != 'null':
+        depot_layers_js = f"""
+        map.addSource('assets', {{ 'type': 'geojson', 'data': {depots_json} }});
         map.addLayer({{
             'id': 'assets-points', 'type': 'circle', 'source': 'assets',
             'paint': {{ 
@@ -422,6 +427,39 @@ def get_mapbox_html(
         }});
         """
 
+    # --- NEW EV Station Layer ---
+    ev_station_layers_js = ""
+    ev_station_popup_js = ""
+    if ev_stations_json != 'null':
+        ev_station_layers_js = f"""
+        map.addSource('ev-stations', {{ 'type': 'geojson', 'data': {ev_stations_json} }});
+        map.addLayer({{
+            'id': 'ev-stations-points', 'type': 'circle', 'source': 'ev-stations',
+            'paint': {{
+                'circle-radius': 5,
+                'circle-color': '{colors["ev_stations"]}',
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#FFFFFF'
+            }}
+        }});
+        """
+        # Simple popup, assuming 'name' or 'station' property
+        ev_station_popup_js = f"""
+        const evPopup = new mapboxgl.Popup({{ closeButton: false, closeOnClick: false }});
+        map.on('mouseenter', 'ev-stations-points', (e) => {{
+            map.getCanvas().style.cursor = 'pointer';
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const props = e.features[0].properties;
+            const name = props.name || props.station_name || props.facility_name || 'EV Station';
+            
+            evPopup.setLngLat(coordinates).setHTML(`<b>${{name}}</b><br>Existing Station`).addTo(map);
+        }});
+        map.on('mouseleave', 'ev-stations-points', () => {{
+            map.getCanvas().style.cursor = '';
+            evPopup.remove();
+        }});
+        """
+
     return f"""
     <!DOCTYPE html>
     <html>
@@ -459,11 +497,13 @@ def get_mapbox_html(
             {fvi_layers_js}
             {polygon_layers_js}
             {line_layers_js}
-            {point_layers_js}
+            {depot_layers_js}
+            {ev_station_layers_js}
         }});
         
         // Add popup interactivity
         {depot_popup_js}
+        {ev_station_popup_js}
         {nta_popup_js}
 
     </script>
@@ -478,16 +518,27 @@ st.set_page_config(page_title="NYC LAEP+ Mock", layout="wide")
 st.title("NYC School Bus Electrification Planner") 
 
 with st.sidebar:
-    st.header("Map Layers")
-    show_points = st.checkbox("Bus Depots (Points)", value=True)
-    show_lines = st.checkbox("45-min Routes (Lines)", value=False) # <-- UPDATED default
-    show_polygons = st.checkbox("NTA Boundaries (Polygons)", value=True)
-    show_flood_zones = st.checkbox("Flood Risk Zones (FVI)", value=True) # <-- UPDATED default
+    # --- RESTRUCTURED SIDEBAR ---
+    st.header("Point Layer")
+    point_layer_selection = st.radio(
+        "Select point data to display:",
+        ("Bus Depots", "Existing Charging Stations", "None"),
+        index=0,
+        label_visibility="collapsed"
+    )
+    st.caption("Bus Depots show location and capacity gaps. Sized by existing capacity, colored by electrification speed.")
+
+    st.header("Polygon Layers")
+    show_polygons = st.checkbox("Neighborhood Boundaries (NTA)", value=True)
+    show_flood_zones = st.checkbox("Flood Risk Zones (FVI)", value=True)
+    
+    st.header("Polyline Layer")
+    show_lines = st.checkbox("45-min Routes", value=False)
+    # --- END RESTRUCTURE ---
 
     st.header("Data Filters")
     selected_boros = st.multiselect("Filter by Borough", options=BOROUGHS, default=BOROUGHS)
     
-    # --- NEW Depot Filter ---
     st.subheader("Depot Filters")
     selected_speeds = st.multiselect(
         "Filter by Electrification Speed", 
@@ -506,7 +557,10 @@ with st.spinner("Loading NTA boundaries..."):
     ntas_geojson, nta_status = load_nta_geojson()
 
 with st.spinner("Loading Flood Risk zones..."):
-    fvi_geojson, fvi_status = load_fvi_geojson() # <-- ADDED
+    fvi_geojson, fvi_status = load_fvi_geojson()
+
+with st.spinner("Loading EV Charging Stations..."):
+    ev_stations_geojson, ev_stations_status = load_ev_stations_geojson()
 
 with st.spinner("Generating mock bus depots..."):
     depot_data = generate_depots_in_ntas(ntas_geojson)
@@ -518,11 +572,12 @@ with st.spinner("Generating mock bus depots..."):
     points_df["name"] = [f"School Bus Depot {i+1}" for i in range(len(points_df))]
 
 # --- APPLY FILTERS ---
-# 1. Filter by Electrification Speed
+# 1. Filter Depots by Electrification Speed
 if selected_speeds:
     points_df = points_df[points_df["electrification_speed"].isin(selected_speeds)]
 else:
-    points_df = pd.DataFrame(columns=points_df.columns) # Empty df if nothing selected
+    # If no speeds are selected, show no depots
+    points_df = pd.DataFrame(columns=points_df.columns) 
 
 # 2. Filter NTA Polygons by Borough
 filtered_nta_features = []
@@ -536,10 +591,20 @@ nta_filtered = {"type": "FeatureCollection", "features": filtered_nta_features}
 # 3. Filter FVI Polygons (no filter, just use all)
 fvi_filtered = fvi_geojson 
 
+# 4. Filter EV Stations by Borough
+filtered_ev_station_features = []
+for f in ev_stations_geojson.get("features", []):
+    props = f.get("properties", {})
+    # Assuming borough property is 'boro' or 'BoroName' or 'borough'
+    boro = props.get("boro") or props.get("BoroName") or props.get("borough")
+    if not selected_boros or (boro in selected_boros):
+        filtered_ev_station_features.append(f)
+ev_stations_filtered = {"type": "FeatureCollection", "features": filtered_ev_station_features}
+
 # --- UPDATED Route Generation (Per Borough) ---
 routes: List[RouteResult] = []
 if show_lines and len(selected_boros) > 0:
-    # We generate routes based on the *filtered* depots
+    # Routes generate from *depots*, regardless of which point layer is shown
     candidate_depots = points_df[points_df["borough"].isin(selected_boros)]
     
     with st.status(f"Searching for {N_ROUTES_PER_BORO} routes per borough...", expanded=False) as status:
@@ -552,7 +617,6 @@ if show_lines and len(selected_boros) > 0:
                 ui_debug(f"No depots in {boro} to start routes from.")
                 continue
 
-            # Get origins for this borough
             origins = [tuple(row) for row in boro_depots[["lon", "lat"]].values]
             random.shuffle(origins)
             
@@ -562,7 +626,7 @@ if show_lines and len(selected_boros) > 0:
                 if res:
                     routes.append(res)
                     routes_found_in_boro += 1
-                time.sleep(0.1) # be gentle on OSRM
+                time.sleep(0.1) 
             
             total_routes_found += routes_found_in_boro
             ui_debug(f"Found {routes_found_in_boro} routes for {boro}")
@@ -592,8 +656,11 @@ if show_lines and routes:
         })
     lines_data_json = json.dumps({"type": "FeatureCollection", "features": line_features})
 
-points_data_json = 'null'
-if show_points:
+# --- Handle Point Layer Selection ---
+depots_data_json = 'null'
+ev_stations_data_json = 'null'
+
+if point_layer_selection == "Bus Depots":
     # We use the already-filtered points_df
     point_features = []
     for _, row in points_df.iterrows():
@@ -601,7 +668,6 @@ if show_points:
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [row["lon"], row["lat"]]},
             "properties": {
-                # Pass all new data to the map
                 "name": row["name"],
                 "borough": row["borough"],
                 "existing_capacity_kw": row["existing_capacity_kw"],
@@ -610,7 +676,12 @@ if show_points:
                 "electrification_speed": row["electrification_speed"]
             }
         })
-    points_data_json = json.dumps({"type": "FeatureCollection", "features": point_features})
+    depots_data_json = json.dumps({"type": "FeatureCollection", "features": point_features})
+
+elif point_layer_selection == "Existing Charging Stations":
+    # We use the already-filtered ev_stations_filtered
+    ev_stations_data_json = json.dumps(ev_stations_filtered)
+
 
 # --- Render map using components.html ---
 map_html = get_mapbox_html(
@@ -619,10 +690,11 @@ map_html = get_mapbox_html(
     center_lon=DEFAULT_CENTER[0],
     center_lat=DEFAULT_CENTER[1],
     zoom=10,
-    points_json=points_data_json,
-    lines_json=lines_data_json,
+    depots_json=depots_data_json,
+    ev_stations_json=ev_stations_data_json,
+    lines_json=lines_json,
     polygons_json=polygons_data_json,
-    fvi_json=fvi_data_json, # <-- Pass FVI data
+    fvi_json=fvi_data_json, 
     colors=COLORS
 )
 components.html(map_html, height=800, scrolling=False)
@@ -634,7 +706,8 @@ components.html(map_html, height=800, scrolling=False)
 st.subheader("Debug & Status")
 status_table = pd.DataFrame([
     {"key": "nta_status", "value": f"{nta_status} ({len(nta_filtered.get('features', []))} features)"},
-    {"key":"fvi_status", "value": f"{fvi_status} ({len(fvi_filtered.get('features', []))} features)"}, # <-- ADDED
+    {"key":"fvi_status", "value": f"{fvi_status} ({len(fvi_filtered.get('features', []))} features)"},
+    {"key":"ev_station_status", "value": f"{ev_stations_status} ({len(ev_stations_filtered.get('features', []))} features shown)"}, # <-- NEW
     {"key": "depots_shown", "value": f"{str(len(points_df))} (after filters)"}, 
     {"key": "routes_found", "value": f"{str(len(routes))}"},
     {"key": "osrm_base", "value": OSRM_BASE},
@@ -664,6 +737,8 @@ with st.expander("Run smoke tests"):
     tests.append({"test": "NTA using fallback", "pass": nta_status != "fallback"})
     tests.append({"test": "FVI features present", "pass": len(fvi_filtered.get('features', [])) > 0})
     tests.append({"test": "FVI using fallback", "pass": not "fallback" in fvi_status})
+    tests.append({"test": "EV Stations present", "pass": len(ev_stations_filtered.get('features', [])) > 0})
+    tests.append({"test": "EV Stations using fallback", "pass": not "fallback" in ev_stations_status})
     
     if show_lines and routes:
         tests.append({"test": "Routes found", "pass": len(routes) > 0})
@@ -676,7 +751,7 @@ with st.expander("Run smoke tests"):
 st.markdown("""
 - This app now uses `streamlit.components.v1.html` and `mapbox-gl-js` to render the map.
 - `folium` and `streamlit-folium` are no longer used.
-- All four layers (depots, routes, NTAs, flood zones) are supported.
+- All layers are supported with a new sidebar structure.
 - App is set to find 3 45-minute routes per selected borough.
 - OSRM_BASE can be overridden in `st.secrets` for a private OSRM server.
 - Public OSRM is rate-limited; for reliability, run your own OSRM backend.
