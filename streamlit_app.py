@@ -2,9 +2,10 @@
 # NYC LAEP+ mock in Streamlit using Mapbox GL JS + OSRM routes.
 # Features:
 # - Renders map using streamlit.components.v1.html and mapbox-gl-js
-# - **Sidebar restructured into 3 categories (Point, Polygon, Polyline)**
-# - **Added new "Existing Charging Stations" point layer**
-# - **NTA layer style updated to transparent fill with black outline**
+# - Sidebar restructured into 3 categories (Point, Polygon, Polyline)
+# - **FIXED: EV Charging Stations now filter spatially and appear correctly.**
+# - **FIXED: EV Charging Station hover popup now shows detailed properties.**
+# - NTA layer style updated to transparent fill with black outline
 # - Toggleable layers: depots/stations, routes, NTAs, flood risk
 # - Flood Risk layer uses graduated RED ramp based on 'FVI_storm_surge_2050s' (1-5)
 # - Borough filters across all layers
@@ -443,16 +444,29 @@ def get_mapbox_html(
             }}
         }});
         """
-        # Simple popup, assuming 'name' or 'station' property
+        # --- UPDATED EV Station Popup ---
         ev_station_popup_js = f"""
         const evPopup = new mapboxgl.Popup({{ closeButton: false, closeOnClick: false }});
         map.on('mouseenter', 'ev-stations-points', (e) => {{
             map.getCanvas().style.cursor = 'pointer';
             const coordinates = e.features[0].geometry.coordinates.slice();
             const props = e.features[0].properties;
-            const name = props.name || props.station_name || props.facility_name || 'EV Station';
+
+            // Use '??' (nullish coalescing) to provide a fallback for missing data
+            const stationName = props["STATION NAME"] ?? 'N/A';
+            const agency = props["AGENCY"] ?? 'N/A';
+            const chargerType = props["TYPE OF CHARGER"] ?? 'N/A';
+            const numPlugs = props["NO. OF PLUGS"] ?? 'N/A';
+
+            const popupHtml = `
+                <b>${{stationName}}</b><br>
+                <hr style='margin: 2px 0; border-color: #555;'>
+                Agency: <b>${{agency}}</b><br>
+                Charger Type: <b>${{chargerType}}</b><br>
+                Plugs: <b>${{numPlugs}}</b>
+            `;
             
-            evPopup.setLngLat(coordinates).setHTML(`<b>${{name}}</b><br>Existing Station`).addTo(map);
+            evPopup.setLngLat(coordinates).setHTML(popupHtml).addTo(map);
         }});
         map.on('mouseleave', 'ev-stations-points', () => {{
             map.getCanvas().style.cursor = '';
@@ -553,8 +567,20 @@ random.seed(42)
 # DATA — LOADING AND FILTERING
 # =============================
 
+# --- Load NTA data first, as it's needed for spatial filtering ---
 with st.spinner("Loading NTA boundaries..."):
     ntas_geojson, nta_status = load_nta_geojson()
+    
+    # *** NEW: Create spatial index of NTA polygons for filtering ***
+    nta_polygons_with_boro = []
+    if nta_status == 'loaded':
+        for feature in ntas_geojson.get("features", []):
+            try:
+                geom = shape(feature["geometry"])
+                boro = feature["properties"].get("BoroName", "Unknown")
+                nta_polygons_with_boro.append((geom, boro))
+            except Exception as e:
+                ui_debug(f"Skipping invalid NTA geom for spatial index: {e}")
 
 with st.spinner("Loading Flood Risk zones..."):
     fvi_geojson, fvi_status = load_fvi_geojson()
@@ -591,15 +617,37 @@ nta_filtered = {"type": "FeatureCollection", "features": filtered_nta_features}
 # 3. Filter FVI Polygons (no filter, just use all)
 fvi_filtered = fvi_geojson 
 
-# 4. Filter EV Stations by Borough
+# 4. *** FIXED: Filter EV Stations by Borough (Spatially) ***
 filtered_ev_station_features = []
-for f in ev_stations_geojson.get("features", []):
-    props = f.get("properties", {})
-    # Assuming borough property is 'boro' or 'BoroName' or 'borough'
-    boro = props.get("boro") or props.get("BoroName") or props.get("borough")
-    if not selected_boros or (boro in selected_boros):
-        filtered_ev_station_features.append(f)
+if nta_status == 'loaded' and nta_polygons_with_boro:
+    for f in ev_stations_geojson.get("features", []):
+        try:
+            station_geom = shape(f["geometry"])
+            station_point = station_geom.centroid # Use centroid just in case
+            
+            found_boro = "Unknown"
+            for poly, boro in nta_polygons_with_boro:
+                if station_point.within(poly):
+                    found_boro = boro
+                    break
+            
+            # Now apply the borough filter
+            if not selected_boros or (found_boro in selected_boros):
+                filtered_ev_station_features.append(f)
+        
+        except Exception as e:
+            ui_debug(f"Skipping invalid EV station feature during spatial filter: {e}")
+else:
+    # Fallback if NTAs didn't load: use the old (likely failing) property filter
+    ui_debug("NTA spatial index not available. Falling back to property filter for EV stations.")
+    for f in ev_stations_geojson.get("features", []):
+        props = f.get("properties", {})
+        boro = props.get("boro") or props.get("BoroName") or props.get("borough")
+        if not selected_boros or (boro in selected_boros):
+            filtered_ev_station_features.append(f)
+            
 ev_stations_filtered = {"type": "FeatureCollection", "features": filtered_ev_station_features}
+
 
 # --- UPDATED Route Generation (Per Borough) ---
 routes: List[RouteResult] = []
@@ -646,8 +694,6 @@ fvi_data_json = 'null'
 if show_flood_zones and len(fvi_filtered.get("features", [])):
     fvi_data_json = json.dumps(fvi_filtered)
 
-# *** THIS IS THE FIX ***
-# Define lines_data_json BEFORE the point layer selection logic
 lines_data_json = 'null'
 if show_lines and routes:
     line_features = []
@@ -657,7 +703,6 @@ if show_lines and routes:
             "properties": {"name": f"~{round(r.duration_s/60)} min route"}
         })
     lines_data_json = json.dumps({"type": "FeatureCollection", "features": line_features})
-# *** END FIX ***
 
 # --- Handle Point Layer Selection ---
 depots_data_json = 'null'
@@ -695,7 +740,7 @@ map_html = get_mapbox_html(
     zoom=10,
     depots_json=depots_data_json,
     ev_stations_json=ev_stations_data_json,
-    lines_json=lines_data_json,
+    lines_json=lines_json,
     polygons_json=polygons_data_json,
     fvi_json=fvi_data_json, 
     colors=COLORS
