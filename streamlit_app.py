@@ -14,6 +14,7 @@ import math
 import os
 import random
 import time
+import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
@@ -28,9 +29,28 @@ import streamlit as st
 # Set in .streamlit/secrets.toml:
 # MAPBOX_TOKEN = "pk..."
 # OSRM_BASE = "https://your-osrm-host/route/v1/driving"  # optional, defaults to public demo
+# DEBUG = true  # optional: echoes debug to sidebar
+
+# Simple logger + UI-safe debug helper (avoid st.debug which is not an API)
+logger = logging.getLogger("nyc_laep_mock")
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
+
+def ui_debug(message: str) -> None:
+    """Safe debugging helper.
+    Logs to Python logger and, if DEBUG=true in secrets, mirrors to the sidebar.
+    """
+    try:
+        logger.info(message)
+        if bool(st.secrets.get("DEBUG", False)):
+            st.sidebar.write(f"🔎 {message}")
+    except Exception:
+        # Never crash the app from debug output
+        pass
 
 MAPBOX_TOKEN: Optional[str] = st.secrets.get("MAPBOX_TOKEN") or os.getenv("MAPBOX_TOKEN")
 if not MAPBOX_TOKEN:
+    ui_debug("MAPBOX_TOKEN missing from secrets and env")
     st.error("Missing MAPBOX_TOKEN. Add it to st.secrets or environment.")
     st.stop()
 
@@ -103,11 +123,11 @@ def osrm_route(origin: Tuple[float, float], destination: Tuple[float, float], ti
     try:
         r = requests.get(url, timeout=timeout_s)
         if r.status_code != 200:
-            st.debug(f"OSRM.non200 status={r.status_code} url={url}")
+            ui_debug(f"OSRM.non200 status={r.status_code} url={url}")
             return None
         data = r.json()
         if data.get("code") != "Ok" or not data.get("routes"):
-            st.debug(f"OSRM.badCode code={data.get('code')} url={url}")
+            ui_debug(f"OSRM.badCode code={data.get('code')} url={url}")
             return None
         route = data["routes"][0]
         coords = route["geometry"]["coordinates"]  # [[lon, lat], ...]
@@ -120,7 +140,7 @@ def osrm_route(origin: Tuple[float, float], destination: Tuple[float, float], ti
             attempts=1,
         )
     except Exception as e:
-        st.debug(f"OSRM.exception {e}")
+        ui_debug(f"OSRM.exception {e}")
         return None
 
 
@@ -156,13 +176,13 @@ def find_route_near_duration(origin: Tuple[float, float], target_s: int = TARGET
 def load_nta_geojson() -> Tuple[dict, str]:
     """Fetch 2020 NTA GeoJSON. Returns (geojson, status). Status in {loaded, fallback}."""
     try:
-        st.debug(f"NTA.fetch {NTA2020_GEOJSON_URL}")
+        ui_debug(f"NTA.fetch {NTA2020_GEOJSON_URL}")
         r = requests.get(NTA2020_GEOJSON_URL, timeout=20)
         if r.status_code == 200:
             return r.json(), "loaded"
         return NTA_FALLBACK, "fallback"
     except Exception as e:
-        st.debug(f"NTA.exception {e}")
+        ui_debug(f"NTA.exception {e}")
         return NTA_FALLBACK, "fallback"
 
 
