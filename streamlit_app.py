@@ -312,9 +312,10 @@ st.subheader("Map")
 # Create Folium map
 # Note: Folium uses (lat, lon) for location
 
-# --- NEW: Set up Mapbox basemap if token is available ---
+# --- UPDATED: Set up Mapbox basemap if token is available ---
 if MAPBOX_TOKEN:
-    tileset = f"https://api.mapbox.com/styles/v1/mapbox/standard/tiles/{{z}}/{{x}}/{{y}}?access_token={MAPBOX_TOKEN}"
+    # Corrected URL format for Mapbox Standard style (added /256/ and {{r}})
+    tileset = f"https://api.mapbox.com/styles/v1/mapbox/standard/tiles/256/{{z}}/{{x}}/{{y}}{{r}}?access_token={MAPBOX_TOKEN}"
     attribution = '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> <strong><a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a></strong>'
 else:
     tileset = "OpenStreetMap"
