@@ -47,13 +47,17 @@ def ui_debug(message: str) -> None:
         # Never crash the app from debug output
         pass
 
+MAPBOX_TOKEN: Optional[str] = st.secrets.get("MAPBOX_TOKEN") or os.getenv("MAPBOX_TOKEN")
+if not MAPBOX_TOKEN:
+    ui_debug("MAPBOX_TOKEN missing from secrets. Using default OSM basemap.")
+
 OSRM_BASE: str = st.secrets.get("OSRM_BASE", "https://router.project-osrm.org/route/v1/driving")
 
 NYC_BBOX: Tuple[float, float, float, float] = (-74.25559, 40.49612, -73.70001, 40.91553)
 DEFAULT_CENTER: Tuple[float, float] = (-73.95, 40.72) # (lon, lat)
 
-# Switched to a more reliable NYC Open Data GeoJSON endpoint
-NTA2020_GEOJSON_URL: str = "https://data.cityofnewyork.us/api/geospatial/d3_NTA2020?method=export&format=GeoJSON"
+# Switched to the new ArcGIS pgeojson URL
+NTA2020_GEOJSON_URL: str = "https://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/NYC_Neighborhood_Tabulation_Areas_2020/FeatureServer/0/query?where=1=1&outFields=*&outSR=4326&f=pgeojson"
 TARGET_ROUTE_SECONDS: int = 90 * 60  # 90 minutes
 N_ROUTES_TO_FIND: int = 5 # Hardcoded number of routes
 
@@ -303,7 +307,22 @@ st.subheader("Map")
 
 # Create Folium map
 # Note: Folium uses (lat, lon) for location
-m = folium.Map(location=[DEFAULT_CENTER[1], DEFAULT_CENTER[0]], zoom_start=10)
+
+# --- NEW: Set up Mapbox basemap if token is available ---
+if MAPBOX_TOKEN:
+    tileset = f"https://api.mapbox.com/styles/v1/mapbox/standard/tiles/{{z}}/{{x}}/{{y}}?access_token={MAPBOX_TOKEN}"
+    attribution = '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> <strong><a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a></strong>'
+else:
+    tileset = "OpenStreetMap"
+    attribution = "© OpenStreetMap contributors"
+# --- END NEW ---
+
+m = folium.Map(
+    location=[DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
+    zoom_start=10,
+    tiles=tileset,  # Use the selected tileset
+    attr=attribution # Add the correct attribution
+)
 
 if show_polygons and len(nta_filtered.get("features", [])):
     # Style function for polygons
@@ -315,12 +334,12 @@ if show_polygons and len(nta_filtered.get("features", [])):
             "fillOpacity": 0.2,
         }
     
-    # Tooltip fields updated for new data source - and to match the fallback
+    # Tooltip fields updated to match the new data source (NTAName)
     folium.GeoJson(
         nta_filtered,
         name="NTAs (Polygons)",
         style_function=poly_style,
-        tooltip=folium.GeoJsonTooltip(fields=["ntaname"], aliases=["NTA Name:"])
+        tooltip=folium.GeoJsonTooltip(fields=["NTAName"], aliases=["NTA Name:"])
     ).add_to(m)
 
 if show_points:
