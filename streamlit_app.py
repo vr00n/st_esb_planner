@@ -646,6 +646,8 @@ fvi_data_json = 'null'
 if show_flood_zones and len(fvi_filtered.get("features", [])):
     fvi_data_json = json.dumps(fvi_filtered)
 
+# *** THIS IS THE FIX ***
+# Define lines_data_json BEFORE the point layer selection logic
 lines_data_json = 'null'
 if show_lines and routes:
     line_features = []
@@ -655,6 +657,7 @@ if show_lines and routes:
             "properties": {"name": f"~{round(r.duration_s/60)} min route"}
         })
     lines_data_json = json.dumps({"type": "FeatureCollection", "features": line_features})
+# *** END FIX ***
 
 # --- Handle Point Layer Selection ---
 depots_data_json = 'null'
@@ -692,7 +695,7 @@ map_html = get_mapbox_html(
     zoom=10,
     depots_json=depots_data_json,
     ev_stations_json=ev_stations_data_json,
-    lines_json=lines_json,
+    lines_json=lines_data_json,
     polygons_json=polygons_data_json,
     fvi_json=fvi_data_json, 
     colors=COLORS
