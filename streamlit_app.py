@@ -312,22 +312,37 @@ st.subheader("Map")
 # Create Folium map
 # Note: Folium uses (lat, lon) for location
 
-# --- UPDATED: Set up Mapbox basemap if token is available ---
-if MAPBOX_TOKEN:
-    # Corrected URL format for Mapbox Standard style (added /256/ and {{r}})
-    tileset = f"https://api.mapbox.com/styles/v1/mapbox/standard/tiles/256/{{z}}/{{x}}/{{y}}{{r}}?access_token={MAPBOX_TOKEN}"
-    attribution = '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> <strong><a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a></strong>'
-else:
-    tileset = "OpenStreetMap"
-    attribution = "© OpenStreetMap contributors"
-# --- END NEW ---
-
+# --- UPDATED: Explicitly add basemap as a TileLayer ---
+# Create a map with no default tiles
 m = folium.Map(
     location=[DEFAULT_CENTER[1], DEFAULT_CENTER[0]],
     zoom_start=10,
-    tiles=tileset,  # Use the selected tileset
-    attr=attribution # Add the correct attribution
+    tiles=None  # We will add our own TileLayer manually
 )
+
+# Add the correct basemap
+if MAPBOX_TOKEN:
+    # Corrected URL format for Mapbox Standard style
+    tileset = f"https://api.mapbox.com/styles/v1/mapbox/standard/tiles/256/{{z}}/{{x}}/{{y}}{{r}}?access_token={MAPBOX_TOKEN}"
+    attribution = '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> <strong><a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a></strong>'
+    folium.TileLayer(
+        tiles=tileset,
+        attr=attribution,
+        name="Mapbox Standard",
+        overlay=False,
+        control=True
+    ).add_to(m)
+else:
+    # Add default OpenStreetMap as a fallback
+    folium.TileLayer(
+        tiles="OpenStreetMap",
+        attr="© OpenStreetMap contributors",
+        name="OpenStreetMap",
+        overlay=False,
+        control=True
+    ).add_to(m)
+# --- END UPDATE ---
+
 
 if show_polygons and len(nta_filtered.get("features", [])):
     # Style function for polygons
