@@ -2,19 +2,16 @@
 # NYC LAEP+ mock in Streamlit using Mapbox GL JS + OSRM routes.
 # Features:
 # - Renders map using streamlit.components.v1.html and mapbox-gl-js
+# - **FIXED: NameError on lines_json typo**
+# - **FIXED: Error handling for EV stations with missing geometry**
 # - Sidebar restructured into 3 categories (Point, Polygon, Polyline)
-# - **FIXED: EV Charging Stations now filter spatially and appear correctly.**
-# - **FIXED: EV Charging Station hover popup now shows detailed properties.**
+# - EV Charging Stations now filter spatially and appear correctly.
+# - EV Charging Station hover popup now shows detailed properties.
 # - NTA layer style updated to transparent fill with black outline
-# - Toggleable layers: depots/stations, routes, NTAs, flood risk
 # - Flood Risk layer uses graduated RED ramp based on 'FVI_storm_surge_2050s' (1-5)
 # - Borough filters across all layers
 # - Mock depots generated within NTA boundaries with electrical capacity data
 # - New filter for "Electrification Speed"
-# - Depots colored by speed and sized by existing capacity
-# - Hover tooltips on depots, stations, AND NTA polygons
-# - 45-minute routes, 3 routes generated per selected borough
-# - Routes layer OFF by default, Flood layer ON by default
 
 import json
 import math
@@ -576,6 +573,10 @@ with st.spinner("Loading NTA boundaries..."):
     if nta_status == 'loaded':
         for feature in ntas_geojson.get("features", []):
             try:
+                # *** ADDED CHECK FOR GEOMETRY ***
+                if not feature.get("geometry"):
+                    ui_debug("Skipping NTA feature with no geometry for spatial index.")
+                    continue
                 geom = shape(feature["geometry"])
                 boro = feature["properties"].get("BoroName", "Unknown")
                 nta_polygons_with_boro.append((geom, boro))
@@ -622,6 +623,11 @@ filtered_ev_station_features = []
 if nta_status == 'loaded' and nta_polygons_with_boro:
     for f in ev_stations_geojson.get("features", []):
         try:
+            # *** ADDED CHECK FOR GEOMETRY ***
+            if not f.get("geometry"):
+                ui_debug("Skipping EV station feature with no geometry.")
+                continue
+                
             station_geom = shape(f["geometry"])
             station_point = station_geom.centroid # Use centroid just in case
             
@@ -740,7 +746,7 @@ map_html = get_mapbox_html(
     zoom=10,
     depots_json=depots_data_json,
     ev_stations_json=ev_stations_data_json,
-    lines_json=lines_json,
+    lines_json=lines_data_json, # <-- *** THE FIX IS HERE ***
     polygons_json=polygons_data_json,
     fvi_json=fvi_data_json, 
     colors=COLORS
