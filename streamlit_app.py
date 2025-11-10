@@ -2,16 +2,13 @@
 # NYC LAEP+ mock in Streamlit using Mapbox GL JS + OSRM routes.
 # Features:
 # - Renders map using streamlit.components.v1.html and mapbox-gl-js
-# - **FIXED: NameError on lines_json typo**
-# - **FIXED: Error handling for EV stations with missing geometry**
+# - **FIXED: NameError crash by re-adding lines_data_json logic.**
+# - **FIXED: Added robust geometry checks to EV station filter to reduce log spam.**
 # - Sidebar restructured into 3 categories (Point, Polygon, Polyline)
 # - EV Charging Stations now filter spatially and appear correctly.
 # - EV Charging Station hover popup now shows detailed properties.
 # - NTA layer style updated to transparent fill with black outline
 # - Flood Risk layer uses graduated RED ramp based on 'FVI_storm_surge_2050s' (1-5)
-# - Borough filters across all layers
-# - Mock depots generated within NTA boundaries with electrical capacity data
-# - New filter for "Electrification Speed"
 
 import json
 import math
@@ -575,7 +572,7 @@ with st.spinner("Loading NTA boundaries..."):
             try:
                 # *** ADDED CHECK FOR GEOMETRY ***
                 if not feature.get("geometry"):
-                    ui_debug("Skipping NTA feature with no geometry for spatial index.")
+                    # ui_debug("Skipping NTA feature with no geometry for spatial index.")
                     continue
                 geom = shape(feature["geometry"])
                 boro = feature["properties"].get("BoroName", "Unknown")
@@ -623,13 +620,34 @@ filtered_ev_station_features = []
 if nta_status == 'loaded' and nta_polygons_with_boro:
     for f in ev_stations_geojson.get("features", []):
         try:
-            # *** ADDED CHECK FOR GEOMETRY ***
+            # *** ADDED ROBUST GEOMETRY CHECKS TO FIX LOG SPAM ***
             if not f.get("geometry"):
-                ui_debug("Skipping EV station feature with no geometry.")
+                # ui_debug("Skipping EV station (no 'geometry' key).")
                 continue
-                
-            station_geom = shape(f["geometry"])
-            station_point = station_geom.centroid # Use centroid just in case
+            
+            geom_data = f.get("geometry")
+            if not geom_data or not geom_data.get("coordinates"):
+                # ui_debug("Skipping EV station (missing 'coordinates').")
+                continue
+
+            coords = geom_data.get("coordinates")
+            if not isinstance(coords, list) or len(coords) < 2:
+                # ui_debug("Skipping EV station (invalid 'coordinates' array).")
+                continue
+            
+            # Check for non-numeric coordinates
+            if not (isinstance(coords[0], (int, float)) and isinstance(coords[1], (int, float))):
+                # ui_debug("Skipping EV station (non-numeric coordinates).")
+                continue
+            
+            # Now safe to try shape()
+            station_geom = shape(geom_data)
+            if not station_geom or station_geom.is_empty:
+                # ui_debug("Skipping EV station (empty/invalid geometry from shapely).")
+                continue
+            
+            station_point = station_geom.centroid 
+            # *** END ROBUST CHECKS ***
             
             found_boro = "Unknown"
             for poly, boro in nta_polygons_with_boro:
@@ -642,6 +660,7 @@ if nta_status == 'loaded' and nta_polygons_with_boro:
                 filtered_ev_station_features.append(f)
         
         except Exception as e:
+            # This will now catch *only* truly unexpected errors
             ui_debug(f"Skipping invalid EV station feature during spatial filter: {e}")
 else:
     # Fallback if NTAs didn't load: use the old (likely failing) property filter
@@ -700,6 +719,7 @@ fvi_data_json = 'null'
 if show_flood_zones and len(fvi_filtered.get("features", [])):
     fvi_data_json = json.dumps(fvi_filtered)
 
+# *** THIS BLOCK IS THE FIX for NameError ***
 lines_data_json = 'null'
 if show_lines and routes:
     line_features = []
@@ -709,6 +729,7 @@ if show_lines and routes:
             "properties": {"name": f"~{round(r.duration_s/60)} min route"}
         })
     lines_data_json = json.dumps({"type": "FeatureCollection", "features": line_features})
+# *** END FIX ***
 
 # --- Handle Point Layer Selection ---
 depots_data_json = 'null'
@@ -746,7 +767,7 @@ map_html = get_mapbox_html(
     zoom=10,
     depots_json=depots_data_json,
     ev_stations_json=ev_stations_data_json,
-    lines_json=lines_data_json, # <-- *** THE FIX IS HERE ***
+    lines_json=lines_data_json, # <-- This variable is now defined
     polygons_json=polygons_data_json,
     fvi_json=fvi_data_json, 
     colors=COLORS
