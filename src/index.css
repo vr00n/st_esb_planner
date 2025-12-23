@@ -1,0 +1,158 @@
+:root {
+    font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+
+    color-scheme: light dark;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #242424;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    place-items: center;
+    min-width: 320px;
+    min-height: 100vh;
+}
+
+#root {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+}
+
+.sidebar {
+    width: 350px;
+    height: 100%;
+    background: #1a1a1a;
+    border-right: 1px solid #333;
+    padding: 2rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.map-container {
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+h1 {
+    font-size: 1.5rem;
+    line-height: 1.1;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #646cff, #17becf);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+.section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+    color: #888;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.checkbox-item:hover {
+    color: #fff;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: #646cff;
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.select-multi {
+    width: 100%;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: #eee;
+    padding: 0.5rem;
+    border-radius: 4px;
+    outline: none;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
+}
+
+.debug-panel {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #333;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.mapboxgl-popup-content {
+    background: #1a1a1a !important;
+    color: #eee !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+    border: 1px solid #333 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
+.mapboxgl-popup-tip {
+    border-top-color: #1a1a1a !important;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #333;
+    margin: 1rem 0;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+    color: white;
+    font-weight: 600;
+}
