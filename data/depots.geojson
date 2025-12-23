@@ -1,0 +1,898 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8295326,
+          40.8863334
+        ]
+      },
+      "properties": {
+        "name": "Conner / Rombouts Ave",
+        "description": "Owned by Provost (NYC bus vendor)",
+        "family": "",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8448343,
+          40.8311049
+        ]
+      },
+      "properties": {
+        "name": "Zerega",
+        "description": "",
+        "family": "",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9405394,
+          40.728089
+        ]
+      },
+      "properties": {
+        "name": "East Williamsburg Industrial Park HQ",
+        "description": "",
+        "family": "",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.7774962,
+          40.7019742
+        ]
+      },
+      "properties": {
+        "name": "Jamaica",
+        "description": "",
+        "family": "",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -74.128685,
+          40.6389195
+        ]
+      },
+      "properties": {
+        "name": "MV Staten Island (Port Richmond)",
+        "description": "two sites here",
+        "family": "",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -74.2414666,
+          40.5391371
+        ]
+      },
+      "properties": {
+        "name": "Sharrotts",
+        "description": "",
+        "family": "",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9046698,
+          40.6745357
+        ]
+      },
+      "properties": {
+        "name": "Consolidated, Brownsville 1",
+        "description": "",
+        "family": "Consolidated",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.902735,
+          40.6748108
+        ]
+      },
+      "properties": {
+        "name": "Consolidated, Brownsville 2",
+        "description": "",
+        "family": "Consolidated",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9017408,
+          40.6741452
+        ]
+      },
+      "properties": {
+        "name": "Consolidated, Brownsville 3",
+        "description": "",
+        "family": "Consolidated",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9010992,
+          40.6746388
+        ]
+      },
+      "properties": {
+        "name": "Consolidated, Brownsville 4",
+        "description": "",
+        "family": "Consolidated",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8998525,
+          40.6747636
+        ]
+      },
+      "properties": {
+        "name": "Consolidated, Brownsville 5",
+        "description": "",
+        "family": "Consolidated",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8978355,
+          40.6737546
+        ]
+      },
+      "properties": {
+        "name": "Consolidated, Brownsville 6",
+        "description": "",
+        "family": "Consolidated",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8975244,
+          40.6724445
+        ]
+      },
+      "properties": {
+        "name": "Consolidated, Brownsville 7",
+        "description": "",
+        "family": "Consolidated",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9014082,
+          40.6722411
+        ]
+      },
+      "properties": {
+        "name": "Allied Brownsville 1",
+        "description": "",
+        "family": "Allied",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9018898,
+          40.6718873
+        ]
+      },
+      "properties": {
+        "name": "Allied Brownsville 2",
+        "description": "",
+        "family": "Allied",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9021485,
+          40.6716552
+        ]
+      },
+      "properties": {
+        "name": "Allied Brownsville 3",
+        "description": "",
+        "family": "Allied",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9001959,
+          40.6719725
+        ]
+      },
+      "properties": {
+        "name": "Allied Brownsville 4",
+        "description": "",
+        "family": "Allied",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9052062,
+          40.6737302
+        ]
+      },
+      "properties": {
+        "name": "Logan, Brownsville",
+        "description": "",
+        "family": "Logan",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9050462,
+          40.6860887
+        ]
+      },
+      "properties": {
+        "name": "Happy Day(?) Lot",
+        "description": "",
+        "family": "Imperato",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8371891,
+          40.816729
+        ]
+      },
+      "properties": {
+        "name": "Total, Zerega",
+        "description": "",
+        "family": "Vona/1stS",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8405503,
+          40.8376991
+        ]
+      },
+      "properties": {
+        "name": "GVC Zerega",
+        "description": "",
+        "family": "LaValie",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.843552,
+          40.8229118
+        ]
+      },
+      "properties": {
+        "name": "Pioneer Zerega",
+        "description": "",
+        "family": "Pioneer",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8438465,
+          40.8158847
+        ]
+      },
+      "properties": {
+        "name": "Logan Zerega",
+        "description": "",
+        "family": "Logan",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8202217,
+          40.895117
+        ]
+      },
+      "properties": {
+        "name": "Selby, Eastchester",
+        "description": "",
+        "family": "Selby",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8180925,
+          40.8958819
+        ]
+      },
+      "properties": {
+        "name": "Pioneer Eastchester 1",
+        "description": "",
+        "family": "Pioneer",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.7652381,
+          40.6543102
+        ]
+      },
+      "properties": {
+        "name": "Logan Near JFK",
+        "description": "",
+        "family": "Logan",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9210739,
+          40.6430142
+        ]
+      },
+      "properties": {
+        "name": "Consolidated Ralph Ave",
+        "description": "",
+        "family": "Consolidated",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9152689,
+          40.6096878
+        ]
+      },
+      "properties": {
+        "name": "Jofaz, Mill Basin",
+        "description": "",
+        "family": "Jofaz",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9750018,
+          40.6220811
+        ]
+      },
+      "properties": {
+        "name": "Careful 1",
+        "description": "",
+        "family": "Careful",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -74.0095835,
+          40.6741042
+        ]
+      },
+      "properties": {
+        "name": "Jofaz Red Hook, 1",
+        "description": "",
+        "family": "Jofaz",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -74.188293,
+          40.6098426
+        ]
+      },
+      "properties": {
+        "name": "IC Bus",
+        "description": "",
+        "family": "Gotham/Mini",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -74.227532,
+          40.5455539
+        ]
+      },
+      "properties": {
+        "name": "Pioneer Staten Island",
+        "description": "",
+        "family": "Pioneer",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9820038,
+          40.5843281
+        ]
+      },
+      "properties": {
+        "name": "Hoyt, Coney Island",
+        "description": "",
+        "family": "DAK/Hoyt",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9309253,
+          40.7764213
+        ]
+      },
+      "properties": {
+        "name": "All American Halletts 1",
+        "description": "",
+        "family": "AllAm",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8249921,
+          40.8920992
+        ]
+      },
+      "properties": {
+        "name": "Pride",
+        "description": "",
+        "family": "First Student",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.88463,
+          40.8095092
+        ]
+      },
+      "properties": {
+        "name": "Philip Bus",
+        "description": "",
+        "family": "Ginzburg",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8451472,
+          40.6886733
+        ]
+      },
+      "properties": {
+        "name": "Logan Atlantic Ave",
+        "description": "",
+        "family": "Logan",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.8973344,
+          40.6543724
+        ]
+      },
+      "properties": {
+        "name": "Snediker",
+        "description": "",
+        "family": "Selby",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.974244,
+          40.617265
+        ]
+      },
+      "properties": {
+        "name": "CAREFUL BUS INC. (03487)",
+        "description": "",
+        "family": "Careful",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.845147,
+          40.688673
+        ]
+      },
+      "properties": {
+        "name": "BOBBY`S BUS CO INC (05529)",
+        "description": "",
+        "family": "Logan",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -74.188293,
+          40.609842
+        ]
+      },
+      "properties": {
+        "name": "IC COACHWAYS INC (48467)",
+        "description": "",
+        "family": "Gotham/Mini",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.843552,
+          40.822911
+        ]
+      },
+      "properties": {
+        "name": "PIONEER TRANSPORTATION CORP (03313)",
+        "description": "",
+        "family": "Pioneer",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.901408,
+          40.672241
+        ]
+      },
+      "properties": {
+        "name": "ALLIED TRANSIT CORP (33637)",
+        "description": "",
+        "family": "Allied",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.829532,
+          40.886333
+        ]
+      },
+      "properties": {
+        "name": "NYCSBUS(BRONX) (49348)",
+        "description": "",
+        "family": "NYCSBUS",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.940539,
+          40.728089
+        ]
+      },
+      "properties": {
+        "name": "NYCSBUS(NORMAN AVE) (52335)",
+        "description": "",
+        "family": "NYCSBUS",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -74.128685,
+          40.638919
+        ]
+      },
+      "properties": {
+        "name": "NYCSBUS(STATEN ISLAND) (52371)",
+        "description": "",
+        "family": "NYCSBUS",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.777496,
+          40.701974
+        ]
+      },
+      "properties": {
+        "name": "NYCSBUS(JAMAICA) (52372)",
+        "description": "",
+        "family": "NYCSBUS",
+        "existing_capacity_kw": 100,
+        "needed_capacity_kw": 250,
+        "capacity_gap_kw": 150,
+        "electrification_speed": "Fast"
+      }
+    }
+  ]
+}

@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Map of Other Bus Depots (Yards)</name>
+    <description/>
+    <Folder>
+      <name>NYCSBUS Sites</name>
+      <Placemark>
+        <name>Conner / Rombouts Ave</name>
+        <description>Owned by Provost (NYC bus vendor)</description>
+        <Point><coordinates>-73.8295326,40.8863334,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Zerega</name>
+        <Point><coordinates>-73.8448343,40.8311049,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>East Williamsburg Industrial Park HQ</name>
+        <Point><coordinates>-73.9405394,40.728089,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Jamaica</name>
+        <Point><coordinates>-73.7774962,40.7019742,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>MV Staten Island (Port Richmond)</name>
+        <description>two sites here</description>
+        <Point><coordinates>-74.128685,40.6389195,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Sharrotts</name>
+        <Point><coordinates>-74.2414666,40.5391371,0</coordinates></Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>Other Depots</name>
+      <Placemark>
+        <name>Consolidated, Brownsville 1</name>
+        <ExtendedData><Data name="Family"><value>Consolidated</value></Data></ExtendedData>
+        <Point><coordinates>-73.9046698,40.6745357,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Consolidated, Brownsville 2</name>
+        <ExtendedData><Data name="Family"><value>Consolidated</value></Data></ExtendedData>
+        <Point><coordinates>-73.902735,40.6748108,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Consolidated, Brownsville 3</name>
+        <ExtendedData><Data name="Family"><value>Consolidated</value></Data></ExtendedData>
+        <Point><coordinates>-73.9017408,40.6741452,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Consolidated, Brownsville 4</name>
+        <ExtendedData><Data name="Family"><value>Consolidated</value></Data></ExtendedData>
+        <Point><coordinates>-73.9010992,40.6746388,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Consolidated, Brownsville 5</name>
+        <ExtendedData><Data name="Family"><value>Consolidated</value></Data></ExtendedData>
+        <Point><coordinates>-73.8998525,40.6747636,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Consolidated, Brownsville 6</name>
+        <ExtendedData><Data name="Family"><value>Consolidated</value></Data></ExtendedData>
+        <Point><coordinates>-73.8978355,40.6737546,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Consolidated, Brownsville 7</name>
+        <ExtendedData><Data name="Family"><value>Consolidated</value></Data></ExtendedData>
+        <Point><coordinates>-73.8975244,40.6724445,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Allied Brownsville 1</name>
+        <ExtendedData><Data name="Family"><value>Allied</value></Data></ExtendedData>
+        <Point><coordinates>-73.9014082,40.6722411,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Allied Brownsville 2</name>
+        <ExtendedData><Data name="Family"><value>Allied</value></Data></ExtendedData>
+        <Point><coordinates>-73.9018898,40.6718873,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Allied Brownsville 3</name>
+        <ExtendedData><Data name="Family"><value>Allied</value></Data></ExtendedData>
+        <Point><coordinates>-73.9021485,40.6716552,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Allied Brownsville 4</name>
+        <ExtendedData><Data name="Family"><value>Allied</value></Data></ExtendedData>
+        <Point><coordinates>-73.9001959,40.6719725,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Logan, Brownsville</name>
+        <ExtendedData><Data name="Family"><value>Logan</value></Data></ExtendedData>
+        <Point><coordinates>-73.9052062,40.6737302,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Happy Day(?) Lot</name>
+        <ExtendedData><Data name="Family"><value>Imperato</value></Data></ExtendedData>
+        <Point><coordinates>-73.9050462,40.6860887,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Total, Zerega</name>
+        <ExtendedData><Data name="Family"><value>Vona/1stS</value></Data></ExtendedData>
+        <Point><coordinates>-73.8371891,40.816729,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>GVC Zerega</name>
+        <ExtendedData><Data name="Family"><value>LaValie</value></Data></ExtendedData>
+        <Point><coordinates>-73.8405503,40.8376991,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Pioneer Zerega</name>
+        <ExtendedData><Data name="Family"><value>Pioneer</value></Data></ExtendedData>
+        <Point><coordinates>-73.843552,40.8229118,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Logan Zerega</name>
+        <ExtendedData><Data name="Family"><value>Logan</value></Data></ExtendedData>
+        <Point><coordinates>-73.8438465,40.8158847,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Selby, Eastchester</name>
+        <ExtendedData><Data name="Family"><value>Selby</value></Data></ExtendedData>
+        <Point><coordinates>-73.8202217,40.895117,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Pioneer Eastchester 1</name>
+        <ExtendedData><Data name="Family"><value>Pioneer</value></Data></ExtendedData>
+        <Point><coordinates>-73.8180925,40.8958819,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Logan Near JFK</name>
+        <ExtendedData><Data name="Family"><value>Logan</value></Data></ExtendedData>
+        <Point><coordinates>-73.7652381,40.6543102,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Consolidated Ralph Ave</name>
+        <ExtendedData><Data name="Family"><value>Consolidated</value></Data></ExtendedData>
+        <Point><coordinates>-73.9210739,40.6430142,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Jofaz, Mill Basin</name>
+        <ExtendedData><Data name="Family"><value>Jofaz</value></Data></ExtendedData>
+        <Point><coordinates>-73.9152689,40.6096878,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Careful 1</name>
+        <ExtendedData><Data name="Family"><value>Careful</value></Data></ExtendedData>
+        <Point><coordinates>-73.9750018,40.6220811,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Jofaz Red Hook, 1</name>
+        <ExtendedData><Data name="Family"><value>Jofaz</value></Data></ExtendedData>
+        <Point><coordinates>-74.0095835,40.6741042,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>IC Bus</name>
+        <ExtendedData><Data name="Family"><value>Gotham/Mini</value></Data></ExtendedData>
+        <Point><coordinates>-74.188293,40.6098426,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Pioneer Staten Island</name>
+        <ExtendedData><Data name="Family"><value>Pioneer</value></Data></ExtendedData>
+        <Point><coordinates>-74.227532,40.5455539,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Hoyt, Coney Island</name>
+        <ExtendedData><Data name="Family"><value>DAK/Hoyt</value></Data></ExtendedData>
+        <Point><coordinates>-73.9820038,40.5843281,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>All American Halletts 1</name>
+        <ExtendedData><Data name="Family"><value>AllAm</value></Data></ExtendedData>
+        <Point><coordinates>-73.9309253,40.7764213,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Pride</name>
+        <ExtendedData><Data name="Family"><value>First Student</value></Data></ExtendedData>
+        <Point><coordinates>-73.8249921,40.8920992,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Philip Bus</name>
+        <ExtendedData><Data name="Family"><value>Ginzburg</value></Data></ExtendedData>
+        <Point><coordinates>-73.88463,40.8095092,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Logan Atlantic Ave</name>
+        <ExtendedData><Data name="Family"><value>Logan</value></Data></ExtendedData>
+        <Point><coordinates>-73.8451472,40.6886733,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>Snediker</name>
+        <ExtendedData><Data name="Family"><value>Selby</value></Data></ExtendedData>
+        <Point><coordinates>-73.8973344,40.6543724,0</coordinates></Point>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>Bus Co Mapping Take 2</name>
+      <Placemark>
+        <name>CAREFUL BUS INC. (03487)</name>
+        <ExtendedData><Data name="Family"><value>Careful</value></Data></ExtendedData>
+        <Point><coordinates>-73.974244,40.617265,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>BOBBY`S BUS CO INC (05529)</name>
+        <ExtendedData><Data name="Family"><value>Logan</value></Data></ExtendedData>
+        <Point><coordinates>-73.845147,40.688673,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>IC COACHWAYS INC (48467)</name>
+        <ExtendedData><Data name="Family"><value>Gotham/Mini</value></Data></ExtendedData>
+        <Point><coordinates>-74.188293,40.609842,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>PIONEER TRANSPORTATION CORP (03313)</name>
+        <ExtendedData><Data name="Family"><value>Pioneer</value></Data></ExtendedData>
+        <Point><coordinates>-73.843552,40.822911,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>ALLIED TRANSIT CORP (33637)</name>
+        <ExtendedData><Data name="Family"><value>Allied</value></Data></ExtendedData>
+        <Point><coordinates>-73.901408,40.672241,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>NYCSBUS(BRONX) (49348)</name>
+        <ExtendedData><Data name="Family"><value>NYCSBUS</value></Data></ExtendedData>
+        <Point><coordinates>-73.829532,40.886333,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>NYCSBUS(NORMAN AVE) (52335)</name>
+        <ExtendedData><Data name="Family"><value>NYCSBUS</value></Data></ExtendedData>
+        <Point><coordinates>-73.940539,40.728089,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>NYCSBUS(STATEN ISLAND) (52371)</name>
+        <ExtendedData><Data name="Family"><value>NYCSBUS</value></Data></ExtendedData>
+        <Point><coordinates>-74.128685,40.638919,0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>NYCSBUS(JAMAICA) (52372)</name>
+        <ExtendedData><Data name="Family"><value>NYCSBUS</value></Data></ExtendedData>
+        <Point><coordinates>-73.777496,40.701974,0</coordinates></Point>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>
